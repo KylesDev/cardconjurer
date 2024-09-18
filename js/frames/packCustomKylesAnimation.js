@@ -13,7 +13,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
 	await resetCardIrregularities();
 	//sets card version
-	card.version = 'm15Regular';
+	card.version = 'customKylesAnimation';
 
 
 	loadScript('/js/frames/manaSymbolsCustomKylesAnimation.js');
