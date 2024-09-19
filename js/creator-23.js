@@ -3564,6 +3564,13 @@ function writeText(textObject, targetContext) {
 						newLineSpacing = textSize * -0.23;
 						textSize -= scaleHeight(0.0086);
 					}
+					if (card.version == 'customKylesMinimalist') {
+						barImageName = 'minimalistbar'
+						barWidth = scaleWidth(0.7547);
+						barHeight = scaleHeight(0.01);
+						barDistance = 0.23;
+						textSize -= scaleHeight(0.0026);
+					}
 					lineContext.drawImage(getManaSymbol(barImageName).image, canvasMargin + (textWidth - barWidth) / 2, canvasMargin + barDistance * textSize, barWidth, barHeight);
 				} else if (possibleCode == 'i') {
 					if (textFont == 'gilllsans' || textFont == 'neosans') {

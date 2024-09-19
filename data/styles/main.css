@@ -43,6 +43,14 @@
 	font-family: phyrexian;
 	src: url("/data/fonts/phyrexian.ttf");
 }
+@font-face {
+	font-family: minimalist;
+	src: url("/data/fonts/ONDPMTG.ttf");
+}
+@font-face {
+	font-family: circularstd;
+	src: url("/data/fonts/CIRCULARSTD-BOOK.ttf");
+}
 
 :root {
 	--site-background: #3a3838 url("/data/images/site/backgrounds/lowpolyDarkGreen.svg") left/cover no-repeat fixed;

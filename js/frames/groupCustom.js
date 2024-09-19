@@ -62,5 +62,7 @@ loadFramePacks([
 	{name:'Circuit', value:'Circuit'},
 
 	{name:'Kyles Custom Frames', value:'disabled'},
-	{name:'Animation Frame', value:'CustomKylesAnimation'}
+	{name:'Animation Frame', value:'CustomKylesAnimation'},
+	{name:'Minimalist', value:'CustomKylesMinimalist'},
+	//{name:'Minimalist (Bleeding Edge)', value:'CustomKylesMinimalistBleed'}
 ])

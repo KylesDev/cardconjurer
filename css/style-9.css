@@ -16,6 +16,14 @@
 	src: url("../fonts/beleren-bsc.ttf") format('truetype');
 }
 @font-face {
+	font-family: minimalist;
+	src: url("../fonts/ONDPMTG.ttf") format('truetype');
+}
+@font-face {
+	font-family: circularstd;
+	src: url("../fonts/CIRCULARSTD-BOOK.ttf") format('truetype');
+}
+@font-face {
 	font-family: matrix;
 	src: url("../fonts/matrix.ttf") format('truetype');
 }
