@@ -19,7 +19,13 @@ availableFrames = [
 	{name:'Green Power/Toughness', src:'/img/frames/m15/transform/regular/ptG.png', bounds:bounds},
 	{name:'Multicolored Power/Toughness', src:'/img/frames/m15/transform/regular/ptM.png', bounds:bounds},
 	{name:'Artifact Power/Toughness', src:'/img/frames/m15/transform/regular/ptA.png', bounds:bounds},
-	{name:'Vehicle Power/Toughness', src:'/img/frames/m15/transform/regular/ptV.png', bounds:bounds}
+	{name:'Vehicle Power/Toughness', src:'/img/frames/m15/transform/regular/ptV.png', bounds:bounds},
+	{name:'White Land Frame', src:'/img/frames/m15/transform/regular/new/backWL.png', masks:masks},
+	{name:'Blue Land Frame', src:'/img/frames/m15/transform/regular/new/backUL.png', masks:masks},
+	{name:'Black Land Frame', src:'/img/frames/m15/transform/regular/new/backBL.png', masks:masks},
+	{name:'Red Land Frame', src:'/img/frames/m15/transform/regular/new/backRL.png', masks:masks},
+	{name:'Green Land Frame', src:'/img/frames/m15/transform/regular/new/backGL.png', masks:masks},
+	{name:'Multicolored Land Frame', src:'/img/frames/m15/transform/regular/new/backML.png', masks:masks},
 ];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;
@@ -28,7 +34,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
 	await resetCardIrregularities();
 	//sets card version
-	card.version = 'm15TransformFront';
+	card.version = 'm15TransformBackNew';
 	//art bounds
 	card.artBounds = {x:0.0767, y:0.1129, width:0.8476, height:0.4429};
 	autoFitArt();

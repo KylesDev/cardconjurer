@@ -10,6 +10,7 @@ availableFrames = [
 	{name:'Green Frame', src:'/img/frames/m15/transform/regular/backG.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/m15/transform/regular/backM.png', masks:masks},
 	{name:'Artifact Frame', src:'/img/frames/m15/transform/regular/backA.png', masks:masks},
+	{name:'Vehicle Frame', src:'/img/frames/m15/transform/regular/backV.png', masks:masks},
 	{name:'Land Frame', src:'/img/frames/m15/transform/regular/backL.png', masks:masks},
 	{name:'White Power/Toughness', src:'/img/frames/m15/transform/regular/ptW.png', bounds:bounds},
 	{name:'Blue Power/Toughness', src:'/img/frames/m15/transform/regular/ptU.png', bounds:bounds},
@@ -17,7 +18,8 @@ availableFrames = [
 	{name:'Red Power/Toughness', src:'/img/frames/m15/transform/regular/ptR.png', bounds:bounds},
 	{name:'Green Power/Toughness', src:'/img/frames/m15/transform/regular/ptG.png', bounds:bounds},
 	{name:'Multicolored Power/Toughness', src:'/img/frames/m15/transform/regular/ptM.png', bounds:bounds},
-	{name:'Artifact Power/Toughness', src:'/img/frames/m15/transform/regular/ptA.png', bounds:bounds}
+	{name:'Artifact Power/Toughness', src:'/img/frames/m15/transform/regular/ptA.png', bounds:bounds},
+	{name:'Vehicle Power/Toughness', src:'/img/frames/m15/transform/regular/ptV.png', bounds:bounds},
 ];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;
@@ -26,7 +28,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
 	await resetCardIrregularities();
 	//sets card version
-	card.version = 'm15TransformFront';
+	card.version = 'm15TransformBack';
 	//art bounds
 	card.artBounds = {x:0.0767, y:0.1129, width:0.8476, height:0.4429};
 	autoFitArt();

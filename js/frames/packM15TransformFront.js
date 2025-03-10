@@ -10,6 +10,7 @@ availableFrames = [
 	{name:'Green Frame', src:'/img/frames/m15/transform/regular/frontG.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/m15/transform/regular/frontM.png', masks:masks},
 	{name:'Artifact Frame', src:'/img/frames/m15/transform/regular/frontA.png', masks:masks},
+	{name:'Vehicle Frame', src:'/img/frames/m15/transform/regular/frontV.png', masks:masks},
 	{name:'Land Frame', src:'/img/frames/m15/transform/regular/frontL.png', masks:masks},
 	{name:'White Power/Toughness', src:'/img/frames/m15/regular/m15PTW.png', bounds:bounds},
 	{name:'Blue Power/Toughness', src:'/img/frames/m15/regular/m15PTU.png', bounds:bounds},
@@ -17,7 +18,14 @@ availableFrames = [
 	{name:'Red Power/Toughness', src:'/img/frames/m15/regular/m15PTR.png', bounds:bounds},
 	{name:'Green Power/Toughness', src:'/img/frames/m15/regular/m15PTG.png', bounds:bounds},
 	{name:'Multicolored Power/Toughness', src:'/img/frames/m15/regular/m15PTM.png', bounds:bounds},
-	{name:'Artifact Power/Toughness', src:'/img/frames/m15/regular/m15PTA.png', bounds:bounds}
+	{name:'Artifact Power/Toughness', src:'/img/frames/m15/regular/m15PTA.png', bounds:bounds},
+	{name:'Vehicle Power/Toughness', src:'/img/frames/m15/regular/m15PTV.png', bounds:bounds},
+	{name:'White Land Frame', src:'/img/frames/m15/transform/regular/frontWL.png', masks:masks},
+	{name:'Blue Land Frame', src:'/img/frames/m15/transform/regular/frontUL.png', masks:masks},
+	{name:'Black Land Frame', src:'/img/frames/m15/transform/regular/frontBL.png', masks:masks},
+	{name:'Red Land Frame', src:'/img/frames/m15/transform/regular/frontRL.png', masks:masks},
+	{name:'Green Land Frame', src:'/img/frames/m15/transform/regular/frontGL.png', masks:masks},
+	{name:'Multicolored Land Frame', src:'/img/frames/m15/transform/regular/frontML.png', masks:masks},
 ];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;

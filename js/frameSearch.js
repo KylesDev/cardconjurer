@@ -1,6 +1,7 @@
 const frameNames = new Map ([
 	//standard
 	['Regular Frames', 'M15Regular-1'],
+	['Enchantment Frames (Nyx)', 'M15Nyx'],
 	['Legend Crowns', 'M15LegendCrowns'],
 	['Legend Crowns (Etched)', 'LegendCrownsEtched'],
 	['Floating Legend Crowns', 'M15LegendCrownsFloating'],
@@ -39,7 +40,8 @@ const frameNames = new Map ([
 	['Conspiracies (Draft Matters)', 'Conspiracy'],
 	['Colorshifted (Planar Chaos)', 'Colorshifted'],
 	['Brawl Legend Crowns', 'Brawl'],
-	//showcase
+	//
+	['Japan Showcase', 'JapanShowcase'],
 	['Paranormal (DSK)', 'Paranormal'],
 	['Bloomburrow Borderless (BLB)', 'BloomburrowBorderless'],
 	['Woodland (BLB)', 'Woodland'],
@@ -169,6 +171,7 @@ const frameNames = new Map ([
 	['Tall Tokens', 'TokenTall-1'],
 	['Short Tokens', 'TokenShort-1'],
 	['Monarch Token', 'TokenMonarch'],
+	['Marker Card', 'TokenMarker'],
 	['Initiative Token', 'TokenInitiative'],
 	['Day/Night Marker', 'TokenDayNight'],
 	['Planeswalker Emblems', 'Emblem'],
@@ -197,6 +200,7 @@ const frameNames = new Map ([
 	['Promos', 'PromoOpenHouse'],
 	['Promo Borderless Frames', 'PromoRegular-1'],
 	['Promo Borderless Frames (Extra Short)', 'IkoShort'],
+	['Promo Nyx Frames', 'PromoNyx'],
 	['Promo Extended Art Frames', 'PromoExtended'],
 	['Promo Nickname Frames', 'PromoNickname'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
@@ -208,6 +212,7 @@ const frameNames = new Map ([
 	['Fullart Basics (THB)', 'TextlessBasics'],
 	['Fullart Basics (ZEN)', 'ZendikarBasic-1'],
 	['Fullart Snow Basics', 'FullartBasicRoundBottom'],
+	['Unfinity Basics (UNF)', 'Unfinity'],
 	['Unstable Basics (UST)', 'Unstable'],
 	['Unhinged Basics (UNH)', 'Unhinged'],
 	['Generic Showcase', 'TextlessGenericShowcase'],

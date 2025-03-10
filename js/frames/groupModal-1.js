@@ -1,5 +1,8 @@
 loadFramePacks([
 	{name:'Regular', value:'ModalRegular'},
+	{name:'Nyx', value:'ModalNyx'},
+	{name:'Snow', value:'ModalSnow'},
+	{name:'Universes Beyond', value:'ModalUB'},
 	{name:'Borderless', value:'ModalBorderless'},
 	{name:'Extended Art', value:'ModalExtended'},
 	{name:'Nickname', value:'ModalNickname'},
@@ -9,6 +12,7 @@ loadFramePacks([
 	{name:'Regular Legend Crowns', value:'ModalLegendCrowns'},
 	{name:'Floating Legend Crowns', value:'ModalLegendCrownsFloating'},
 	{name:'Nickname Legend Crowns', value:'ModalLegendCrownsNickname'},
+	{name:'Universes Beyond Legend Crowns', value:'ModalLegendCrownsUB'},
 	{name:'Brawl Legend Crowns', value:'ModalLegendCrownsBrawl'},
 	{name:'Inner Crowns', value:'M15InnerCrowns'},
 	{name:'Holo Stamps', value:'M15HoloStamps'},

@@ -1,6 +1,8 @@
 //Create objects for common properties across available frames
 var masks = [{src:'/img/frames/m15/regular/m15MaskPinline.png', name:'Pinline'}, {src:'/img/frames/m15/regular/m15MaskTitle.png', name:'Title'}, {src:'/img/frames/m15/regular/m15MaskType.png', name:'Type'}, {src:'/img/frames/m15/regular/m15MaskRules.png', name:'Rules'}, {src:'/img/frames/custom/m15-eighth/regular/Frame.png', name:'Frame'}, {src:'/img/frames/custom/m15-eighth/regular/Border.png', name:'Border'}];
 var bounds = {x:0.7573, y:1901/2100, width:0.188, height:0.0733};
+var stampBounds = {x:0.4254, y:0.9005, width:0.1494, height:0.0486};
+var stampMasks = [{src:'/img/frames/custom/m15-eighth/ub/stamp/pinline.png', name: 'Pinline'}];
 //defines available frames
 availableFrames = [
 	{name:'White Frame', src:'/img/frames/custom/m15-eighth/ub/w.png', masks:masks},
@@ -29,6 +31,21 @@ availableFrames = [
 	{name:'Red Land Frame', src:'/img/frames/custom/m15-eighth/ub/rl.png', masks:masks},
 	{name:'Green Land Frame', src:'/img/frames/custom/m15-eighth/ub/gl.png', masks:masks},
 	{name:'Multicolored Land Frame', src:'/img/frames/custom/m15-eighth/ub/ml.png', masks:masks},
+
+	{name:'White Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/w.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Blue Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/u.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Black Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/b.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Red Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/r.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Green Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/g.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Multicolored Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/m.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Artifact Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/a.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Land Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/l.png', bounds:stampBounds, masks: stampMasks},
+	{name:'Vehicle Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/v.png', bounds:stampBounds, masks: stampMasks},
+
+	{name:'Gray Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/gray.png', bounds:stampBounds},
+	{name:'Silver Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/silver.png', bounds:stampBounds},
+	{name:'Gold Holo Stamp', src:'/img/frames/custom/m15-eighth/ub/stamp/gold.png', bounds:stampBounds},
+	{name:'Black Stamp Background', src:'/img/frames/custom/m15-eighth/ub/stamp/black.png', bounds:stampBounds},
 
 	{name:'M15 Border', src:'/img/frames/m15/regular/m15MaskBorder.png'}
 ];
