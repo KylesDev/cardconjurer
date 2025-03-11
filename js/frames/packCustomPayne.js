@@ -12,7 +12,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
 	await resetCardIrregularities();
 	//sets card version
-	card.version = 'promoRegular';
+	card.version = 'customPayne';
 	//art bounds
 	card.artBounds = {x:0, y:0, width:1, height:0.9224};
 	autoFitArt();

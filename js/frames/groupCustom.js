@@ -74,4 +74,5 @@ loadFramePacks([
 	{name:'Kyles Custom Frames', value:'disabled'},
 	{name:'Animation Frame', value:'CustomKylesAnimation'},
 	{name:'Minimalist', value:'CustomKylesMinimalist'},
+	{name:'Payne', value:'CustomPayne'},
 ])
