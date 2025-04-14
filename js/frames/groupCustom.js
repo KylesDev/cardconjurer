@@ -75,4 +75,5 @@ loadFramePacks([
 	{name:'Animation Frame', value:'CustomKylesAnimation'},
 	{name:'Minimalist', value:'CustomKylesMinimalist'},
 	{name:'Payne', value:'CustomPayne'},
+	{name:'World of Warcraft', value:'CustomWarcraft'},
 ])
