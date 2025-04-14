@@ -10,7 +10,7 @@ availableFrames = [
 	{name:'Green Extension', src:'/img/frames/m15/japanShowcase/margin/g.png', bounds:bounds, ogBounds:ogBounds},
 	{name:'Multicolored Extension', src:'/img/frames/m15/japanShowcase/margin/m.png', bounds:bounds, ogBounds:ogBounds},
 	{name:'Artifact Extension', src:'/img/frames/m15/japanShowcase/margin/a.png', bounds:bounds, ogBounds:ogBounds},
-	{name:'Land Extension', src:'/img/frames/japaneseShowcase/margin/L.png', bounds:bounds, ogBounds:ogBounds},
+	{name:'Land Extension', src:'/img/frames/m15/japanShowcase/margin/L.png', bounds:bounds, ogBounds:ogBounds}
 
 ];
 //disables/enables the "Load Frame Version" button

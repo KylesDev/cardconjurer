@@ -34,7 +34,7 @@ availableFrames = [
 	{name:'Green Frame', src:'/img/frames/m15/japanShowcase/g.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/m15/japanShowcase/m.png', masks:masks},
 	{name:'Artifact Frame', src:'/img/frames/m15/japanShowcase/a.png', masks:masks},
-	{name:'Land Frame', src:'/img/frames/m15/japanShowcase/l.png', masks:masks},
+	{name:'Land Frame', src:'/img/frames/m15/japanShowcase/L.png', masks:masks},
 	{name:'Border', src:'/img/frames/m15/japanShowcase/border.png', bounds:bounds3},
 	
 
@@ -83,7 +83,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 		title: {name:'Title', text:'', x:0.0854, y:0.0522, width:0.8292, height:0.0543, oneLine:true, font:'belerenb', size:0.0381, outlineWidth:0.008, color:'white'},
 		type: {name:'Type', text:'', x:0.0854, y:0.612, width:0.71, height:0.0543, oneLine:true, font:'belerenb', size:0.0279, outlineWidth:0.008, color:'white'},
 		rules: {name:'Rules Text', text:'', x:0.086, y:0.692, width:0.771, height:0.206, size:0.033, outlineWidth:0.008, font:'Plantin MT Pro', color:'white'},
-		pt: {name:'Power/Toughness', text:'', x:0.804, y:0.896, width:0.1180, height:0.049, size:0.04, font:'belerenbsc', oneLine:true, align:'center', color:'white'}
+		pt: {name:'Power/Toughness', text:'', x:0.804, y:0.896, width:0.1180, height:0.049, size:0.04,  outlineWidth:0.008, font:'belerenbsc', oneLine:true, align:'center', color:'white'}
 	});
 }
 //loads available frames
