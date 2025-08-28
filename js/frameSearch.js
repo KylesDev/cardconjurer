@@ -42,6 +42,7 @@ const frameNames = new Map ([
 	['Colorshifted (Planar Chaos)', 'Colorshifted'],
 	['Brawl Legend Crowns', 'Brawl'],
 	// Showcase
+	['Borderless Stellar Sights (EOE)', 'BorderlessStellarSights'],
 	['Draconic (TDM)', 'Draconic'],
 	['Ghostfire (TDM)', 'Ghostfire'],
 	['Japan Showcase', 'JapanShowcase'],
@@ -142,6 +143,8 @@ const frameNames = new Map ([
 	['Sagas', 'SagaRegular'],
 	['Sagas (Universes Beyond)', 'SagaUB'],
 	['Sagas (Scrolls of Middle-earth) (LTR)', 'SagaLTR'],
+	['Saga Creatures (Summons)', 'SagaCreature'],
+	['Saga Creatures (Universes Beyond) (Summons) (FIN)', 'SagaCreatureUB'],
 	//dfc
 	['Transform (Front)', 'M15TransformFront'],
 	['Transform (Back)', 'M15TransformBack'],
@@ -245,6 +248,17 @@ const frameNames = new Map ([
 	['Classicshifted MDFC Addons', 'ClassicshiftedDFC'],
 	['Classicshifted Transform Addons', 'ClassicshiftedTransform'],
 	['Classicshifted Color Identity Pips', 'ClassicshiftedCIPips'],
+	['StoneCutter', 'StoneCutterDeluxe'],
+	['StoneCutter Nickname Addons', 'StoneCutterDeluxeNicknameAddons'],
+	['StoneCutter Extended Art', 'StoneCutterDeluxeExtended'],
+	['StoneCutter Planeswalkers', 'StoneCutterDeluxePlaneswalker'],
+	['StoneCutter Planeswalkers Extended', 'StoneCutterDeluxePlaneswalkerExtended'],
+	['StoneCutter Planeswalkers  Transform Addons', 'StoneCutterDeluxePlaneswalkerTransformAddons'],
+	['StoneCutter Sagas', 'StoneCutterDeluxeSaga'],
+	['StoneCutter Class(y)', 'StoneCutterDeluxeClass'],
+	['StoneCutter Case', 'StoneCutterDeluxeCase'],
+	['StoneCutter MDFC Addons', 'StoneCutterDeluxeDFC'],
+	['StoneCutter Transform Addons', 'StoneCutterDeluxeTransformAddons'],
 	['Short Neon (NEO)', 'NEONeonShort'],
 	['Colored Golden Age (SNC)', 'SNCGildedColored'],
 	['Textless Golden Age (SNC)', 'SNCGildedTextless'],
@@ -295,7 +309,7 @@ function autocomplete(inp, arr) {
 				b.setAttribute("class", "input")
 				b.innerHTML = arr[i];
 				b.addEventListener("click", function(e) {
-					inp.value = this.innerHTML;
+					inp.value = this.textContent;
 					frameSearch(inp.value);
               		closeAllLists();
           		});
