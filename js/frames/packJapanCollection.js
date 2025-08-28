@@ -1,14 +1,14 @@
 //Create objects for common properties across available frames
 var masks = [
-    {src:'/img/frames/m15/japanShowcase/mask/MaskPinline.png', name:'Pinline'},
+	{src:'/img/frames/m15/japanShowcase/mask/MaskPinline.png', name:'Pinline'},
 	{src:'/img/frames/m15/japanShowcase/mask/MaskTitle.png', name:'Title'},
 	{src:'/img/frames/m15/japanShowcase/mask/MaskType.png', name:'Type'},
 	{src:'/img/frames/m15/japanShowcase/mask/MaskBottomPinline.png', name:'Bottom Pinline'},
 	{src:'/img/frames/m15/japanShowcase/mask/MaskBottom.png', name:'Bottom'}];
-	
+
 var masks2 = [
 	{src:'/img/frames/m15/japanShowcase/mana/1.png', name:'1 Mana Symbol'},
-	{src:'/img/frames/m15/japanShowcase/mana/2.png', name:'2 Mana Symbol'}, 
+	{src:'/img/frames/m15/japanShowcase/mana/2.png', name:'2 Mana Symbol'},
 	{src:'/img/frames/m15/japanShowcase/mana/3.png', name:'3 Mana Symbol'},
 	{src:'/img/frames/m15/japanShowcase/mana/4.png', name:'4 Mana Symbol'},
 	{src:'/img/frames/m15/japanShowcase/mana/5.png', name:'5 Mana Symbol'},
@@ -16,16 +16,15 @@ var masks2 = [
 	{src:'/img/frames/m15/japanShowcase/mana/7.png', name:'7 Mana Symbol'},
 	{src:'/img/frames/m15/japanShowcase/mana/8.png', name:'8 Mana Symbol'},
 	{src:'/img/frames/m15/japanShowcase/mana/9.png', name:'9 Mana Symbol'}];
-	
+
 var masks3 = [
-    {src:'/img/frames/m15/japanShowcase/mask/MaskPtBoxPinline.png', name:'PT Box Pinline'}];
+	{src:'/img/frames/m15/japanShowcase/mask/MaskPtBoxPinline.png', name:'PT Box Pinline'}];
 
 var bounds = {x:0.7771, y:0.8876, width:0.1720, height:0.0593};
 var boundsStamp = {x:0.4365, y:0.902, width:0.1264, height:0.0452};
 var bounds3 = {x:0, y:0, width:1, height:1};
 
 //defines available frames
-
 availableFrames = [
 	{name:'White Frame', src:'/img/frames/m15/japanShowcase/w.png', masks:masks},
 	{name:'Blue Frame', src:'/img/frames/m15/japanShowcase/u.png', masks:masks},
@@ -36,7 +35,7 @@ availableFrames = [
 	{name:'Artifact Frame', src:'/img/frames/m15/japanShowcase/a.png', masks:masks},
 	{name:'Land Frame', src:'/img/frames/m15/japanShowcase/L.png', masks:masks},
 	{name:'Border', src:'/img/frames/m15/japanShowcase/border.png', bounds:bounds3},
-	
+
 
 	{name:'White Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/w.png', masks:masks3, bounds:bounds},
 	{name:'Blue Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/u.png', masks:masks3, bounds:bounds},
@@ -61,7 +60,16 @@ availableFrames = [
 	{name:'Artifact Holo Stamp (Alt)', src:'/img/frames/m15/japanShowcase/stamp/a-alt.png', bounds:boundsStamp},
 	{name:'Land Holo Stamp', src:'/img/frames/m15/japanShowcase/stamp/l.png', bounds:boundsStamp},
 
-];
+	{name:'White Nickname', src:'/img/frames/m15/japanShowcase/nickname/w.png', bounds:bounds3},
+	{name:'Blue Nickname', src:'/img/frames/m15/japanShowcase/nickname/u.png', bounds:bounds3},
+	{name:'Black Nickname', src:'/img/frames/m15/japanShowcase/nickname/b.png', bounds:bounds3},
+	{name:'Red Nickname', src:'/img/frames/m15/japanShowcase/nickname/r.png', bounds:bounds3},
+	{name:'Green Nickname', src:'/img/frames/m15/japanShowcase/nickname/g.png', bounds:bounds3},
+	{name:'Multicolored Nickname', src:'/img/frames/m15/japanShowcase/nickname/m.png', bounds:bounds3},
+	{name:'Artifact Nickname', src:'/img/frames/m15/japanShowcase/nickname/a.png', bounds:bounds3},
+	{name:'Land Nickname', src:'/img/frames/m15/japanShowcase/nickname/L.png', bounds:bounds3},
+	{name:'Colorless Nickname', src:'/img/frames/m15/japanShowcase/nickname/c.png', bounds:bounds3}
+	];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;
 //defines process for loading this version, if applicable
@@ -69,7 +77,7 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
 	await resetCardIrregularities();
 	//sets card version
-	card.version = 'japanShowcase';
+	card.version = 'JapaneseCollection';
 	//art bounds
 	card.artBounds = {x:0, y:0, width:1, height:0.9224};
 	autoFitArt();
@@ -80,12 +88,15 @@ document.querySelector('#loadFrameVersion').onclick = async function() {
 	card.watermarkBounds = {x:0.5, y:0.7762, width:0.75, height:0.2305};
 	resetWatermark();
 	//text
-	loadTextOptions({
+loadTextOptions({
 		mana: {name:'Mana Cost', text:'', y:0.0683, width:0.9190, height:71/2100, oneLine:true, size:71/1638, align:'right', shadowX:-0.001, shadowY:0.0029, manaCost:true, manaSpacing:0,},
-		title: {name:'Title', text:'', x:0.0854, y:0.0522, width:0.8292, height:0.0543, oneLine:true, font:'belerenb', size:0.0381, outlineWidth:0.008, color:'white'},
+		nickname: {name:'Nickname', text:'', x:0.090, y:0.0582, width:0.8292, height:0.0543, outlineWidth:0.008, oneLine:true, font:'belerenb', size:0.0381, color:'white',},
+		title: {name:'Title', text:'', x:0.14, y:0.1200, width:0.768, height:0.0243, oneLine:true, outlineWidth:0.0065, font:'Plantin MT Pro', size:0.0229, color:'white', align:'right'},
 		type: {name:'Type', text:'', x:0.0854, y:0.612, width:0.71, height:0.0543, oneLine:true, font:'belerenb', size:0.0279, outlineWidth:0.008, color:'white'},
 		rules: {name:'Rules Text', text:'', x:0.086, y:0.692, width:0.771, height:0.206, size:0.033, outlineWidth:0.008, font:'Plantin MT Pro', color:'white'},
-		pt: {name:'Power/Toughness', text:'', x:0.804, y:0.896, width:0.1180, height:0.049, size:0.04,  outlineWidth:0.008, font:'belerenbsc', oneLine:true, align:'center', color:'white'}
+		flipsideType: {name:'Flipside Type', text:'', x:0.068, y:0.892, width:0.364, height:0.0391, size:0.0234, color:'white', oneLine:true, font:'belerenb'},
+		flipSideReminder: {name:'Flipside Text', text:'', x:0.068, y:0.892, width:0.364, height:0.0391, size:0.0258, color:'white', oneLine:true, align:'right'},
+		pt: {name:'Power/Toughness', text:'', x:0.804, y:0.896, width:0.1180, height:0.049, size:0.04, outlineWidth:0.008, font:'belerenbsc', oneLine:true, align:'center', color:'white'}
 	});
 }
 //loads available frames

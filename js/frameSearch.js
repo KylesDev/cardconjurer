@@ -263,7 +263,10 @@ const frameNames = new Map ([
 	//Custom - Kyles
 	['Animation Frame', 'CustomKylesAnimation'],
 	['Minimalist', 'CustomKylesMinimalist'],
-	['Payne', 'CustomPayne']
+	['Payne', 'CustomPayne'],
+
+	// Collections
+	['Japanese Collection', 'JapanCollection']
 ]);
 
 frameSearch = (str) => {

@@ -4532,8 +4532,8 @@ async function resetSerial() {
 }
 
 function artistEdited(value) {
-	document.querySelector('#art-artist').value = value;
-	document.querySelector('#info-artist').value = value;
+	/*document.querySelector('#art-artist').value = value;
+	document.querySelector('#info-artist').value = value;*/
 	bottomInfoEdited();
 }
 function toggleStarDot() {
@@ -5036,9 +5036,9 @@ function changeCardIndex() {
 		// changeArtIndex();
 	}
 	//set symbol
-	if (!document.querySelector('#lockSetSymbolCode').checked) {
+	/*if (!document.querySelector('#lockSetSymbolCode').checked) {
 		document.querySelector('#set-symbol-code').value = cardToImport.set;
-	}
+	}*/
 	document.querySelector('#set-symbol-rarity').value = cardToImport.rarity.slice(0, 1);
 	if (!document.querySelector('#lockSetSymbolURL').checked) {
 		fetchSetSymbol();
