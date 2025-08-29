@@ -90,7 +90,7 @@ loadFramePacks([
 	{name:'Magrao\'s Kaldheim', value:'CustomMagraoKaldheim'},
 	{name:'Pokemon', value:'Pokemon'},
 	{name:'Circuit', value:'Circuit'},
-	{name:'Borderless Room Short', value:'BorderlessRoomShort'}
+	{name:'Borderless Room Short', value:'BorderlessRoomShort'},
 
 	{name:'Kyles Custom Frames', value:'disabled'},
 	{name:'Animation Frame', value:'CustomKylesAnimation'},
