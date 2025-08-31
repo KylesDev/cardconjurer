@@ -283,6 +283,7 @@ const frameNames = new Map ([
 	['Animation Frame', 'CustomKylesAnimation'],
 	['Minimalist', 'CustomKylesMinimalist'],
 	['Payne', 'CustomPayne'],
+	['Bloomburrow Borderless Colored', 'BloomburrowBorderlessColored'],
 
 	// Collections
 	['Japanese Collection', 'JapanCollection']
