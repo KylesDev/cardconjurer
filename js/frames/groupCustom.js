@@ -97,5 +97,5 @@ loadFramePacks([
 	{name:'Minimalist', value:'CustomKylesMinimalist'},
 	{name:'Payne', value:'CustomPayne'},
 	{name:'World of Warcraft', value:'CustomWarcraft'},
-	{name:'Bloomburrow Borderless Colored', value:'bloomburrowBorderlessColored'},
+	{name:'Bloomburrow Borderless Colored', value:'BloomburrowBorderlessColored'},
 ])
