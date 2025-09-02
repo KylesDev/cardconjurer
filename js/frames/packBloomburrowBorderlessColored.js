@@ -1,24 +1,27 @@
+//Create objects for common properties across available frames
+var creatureMasks = [{src:'/img/frames/custom/bloomburrowBorderlessColored/creaturePinlineMask.png', name:'Pinline'}];
+var noncreatureMasks = [{src:'/img/frames/custom/bloomburrowBorderlessColored/noncreaturePinlineMask.png', name:'Pinline'}];
 //defines available frames
 availableFrames = [
 	// Creature
-	{name:'White Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureW.png'},
-	{name:'Blue Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureU.png'},
-	{name:'Black Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureB.png'},
-	{name:'Red Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureR.png'},
-	{name:'Green Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureG.png'},
-	{name:'Multicolored Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureM.png'},
-	{name:'Artifact Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureA.png'},
-	{name:'Vehicle Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureV.png'},
+	{name:'White Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureW.png',masks:creatureMasks},
+	{name:'Blue Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureU.png',masks:creatureMasks},
+	{name:'Black Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureB.png',masks:creatureMasks},
+	{name:'Red Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureR.png',masks:creatureMasks},
+	{name:'Green Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureG.png',masks:creatureMasks},
+	{name:'Multicolored Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureM.png',masks:creatureMasks},
+	{name:'Artifact Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureA.png',masks:creatureMasks},
+	{name:'Vehicle Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureV.png',masks:creatureMasks},
 
 	// Noncreature
-	{name:'White Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureW.png'},
-	{name:'Blue Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureU.png'},
-	{name:'Black Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureB.png'},
-	{name:'Red Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureR.png'},
-	{name:'Green Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureG.png'},
-	{name:'Multicolored Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureM.png'},
-	{name:'Artifact Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureA.png'},
-	{name:'Vehicle Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureV.png'},
+	{name:'White Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureW.png', masks:noncreatureMasks},
+	{name:'Blue Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureU.png', masks:noncreatureMasks},
+	{name:'Black Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureB.png', masks:noncreatureMasks},
+	{name:'Red Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureR.png', masks:noncreatureMasks},
+	{name:'Green Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureG.png', masks:noncreatureMasks},
+	{name:'Multicolored Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureM.png', masks:noncreatureMasks},
+	{name:'Artifact Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureA.png', masks:noncreatureMasks},
+	{name:'Vehicle Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureV.png', masks:noncreatureMasks},
 
 	// Legendary Accents
 	{name:'White Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownW.png'},
