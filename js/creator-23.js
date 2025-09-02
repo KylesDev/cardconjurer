@@ -5144,8 +5144,7 @@ function importCard(cardObject) {
 		}
 		optionIndex ++;
 	});
-	var importFlavorText = !!document.querySelector('#importFlavorText').checked;
-	changeCardIndex(importFlavorText);
+	changeCardIndex();
 }
 
 async function pasteCardText() {
@@ -5258,8 +5257,9 @@ function extractSagaReminderText(text) {
   return match ? match[0] : null;
 }
 
-function changeCardIndex(importFlavorText = true) {
+function changeCardIndex() {
 	var cardToImport = scryfallCard[document.querySelector('#import-index').value];
+	var importFlavorText = !!document.querySelector('#importFlavorText').checked;
 	//text
 	var langFontCode = "";
 	if (cardToImport.lang == "ph") {langFontCode = "{fontphyrexian}"}
