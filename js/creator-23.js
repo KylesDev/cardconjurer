@@ -5144,7 +5144,8 @@ function importCard(cardObject) {
 		}
 		optionIndex ++;
 	});
-	changeCardIndex();
+	var importFlavorText = !!document.querySelector('#importFlavorText').checked;
+	changeCardIndex(importFlavorText);
 }
 
 async function pasteCardText() {
@@ -5257,7 +5258,7 @@ function extractSagaReminderText(text) {
   return match ? match[0] : null;
 }
 
-function changeCardIndex() {
+function changeCardIndex(importFlavorText = true) {
 	var cardToImport = scryfallCard[document.querySelector('#import-index').value];
 	//text
 	var langFontCode = "";
@@ -5331,7 +5332,7 @@ function changeCardIndex() {
 			card.text.rules.text = langFontCode + rulesText;
 		}
 
-		if (cardToImport.flavor_text) {
+		if (cardToImport.flavor_text && importFlavorText) {
 			var flavorText = cardToImport.flavor_text;
 			var flavorTextCounter = 1;
 			while (flavorText.includes('*') || flavorText.includes('"')) {
