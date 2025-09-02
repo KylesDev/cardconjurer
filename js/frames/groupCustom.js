@@ -98,4 +98,5 @@ loadFramePacks([
 	{name:'Payne', value:'CustomPayne'},
 	{name:'World of Warcraft', value:'CustomWarcraft'},
 	{name:'Bloomburrow Borderless Colored', value:'BloomburrowBorderlessColored'},
+	{name:'Eldraine Storybook Borderless', value:'StorybookWOEBorderless'},
 ])

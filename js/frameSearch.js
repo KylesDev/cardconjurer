@@ -278,6 +278,7 @@ const frameNames = new Map ([
 	['Pokemon', 'Pokemon'],
 	['Circuit', 'Circuit'],
 	['Borderless Room Short', 'BorderlessRoomShort'],
+	['Storybook WOE Borderless', 'StorybookWOEBorderless'],
 
 	//Custom - Kyles
 	['Animation Frame', 'CustomKylesAnimation'],
