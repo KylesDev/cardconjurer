@@ -91,6 +91,7 @@ loadFramePacks([
 	{name:'Pokemon', value:'Pokemon'},
 	{name:'Circuit', value:'Circuit'},
 	{name:'Borderless Room Short', value:'BorderlessRoomShort'},
+	{name:'Eldraine Storybook Borderless', value:'StorybookWOEBorderless'},
 
 	{name:'Kyles Custom Frames', value:'disabled'},
 	{name:'Animation Frame', value:'CustomKylesAnimation'},
@@ -98,5 +99,4 @@ loadFramePacks([
 	{name:'Payne', value:'CustomPayne'},
 	{name:'World of Warcraft', value:'CustomWarcraft'},
 	{name:'Bloomburrow Borderless Colored', value:'BloomburrowBorderlessColored'},
-	{name:'Eldraine Storybook Borderless', value:'StorybookWOEBorderless'},
 ])
