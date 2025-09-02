@@ -11,6 +11,7 @@ availableFrames = [
 	{name:'Green Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureG.png',masks:creatureMasks},
 	{name:'Multicolored Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureM.png',masks:creatureMasks},
 	{name:'Artifact Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureA.png',masks:creatureMasks},
+	{name:'Colorless Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureC.png',masks:creatureMasks},
 	{name:'Vehicle Creature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/creatureV.png',masks:creatureMasks},
 
 	// Noncreature
@@ -21,6 +22,7 @@ availableFrames = [
 	{name:'Green Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureG.png', masks:noncreatureMasks},
 	{name:'Multicolored Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureM.png', masks:noncreatureMasks},
 	{name:'Artifact Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureA.png', masks:noncreatureMasks},
+	{name:'Colorless Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureC.png', masks:noncreatureMasks},
 	{name:'Vehicle Noncreature Frame', src:'/img/frames/custom/bloomburrowBorderlessColored/noncreatureV.png', masks:noncreatureMasks},
 
 	// Legendary Accents
@@ -31,6 +33,7 @@ availableFrames = [
 	{name:'Green Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownG.png'},
 	{name:'Multicolored Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownM.png'},
 	{name:'Artifact Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownA.png'},
+	{name:'Colorless Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownC.png'},
 	{name:'Vehicle Legendary Accents', src:'/img/frames/custom/bloomburrowBorderlessColored/crownV.png'},
 ];
 //disables/enables the "Load Frame Version" button
