@@ -879,6 +879,9 @@ function autoFrame() {
 		group = 'Showcase-5';
 		autoBorderlessUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
 		frame = 'Borderless';
+	} else if (frame == 'BloomburrowBorderlessColored') {
+		autoBloomburrowFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Custom';
 	}
 
 	if (autoFramePack != frame) {
@@ -994,6 +997,40 @@ async function autoCircuitFrame(colors, mana_cost, type_line, power) {
 	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
 		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
 	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoBloomburrowFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+
+	// Set frames
+
+	var hasPT = properties.pt != null;
+	if (type_line.toLowerCase().includes('legendary')) {
+		if (properties.pinlineRight) {
+			frames.push(makeBloomburrowFrameByLetter(properties.pinlineRight, 'Crown', true, hasPT));
+		}
+		frames.push(makeBloomburrowFrameByLetter(properties.pinline, "Crown", false, hasPT));
+	}
+	// if (properties.pt) {
+	// 	frames.push(makeBloomburrowFrameByLetter(properties.pt, 'PT', false));
+	// }
+	if (!(properties.frame == 'V' && properties.pinline == 'A')) {
+		if (properties.pinlineRight) {
+			frames.push(makeBloomburrowFrameByLetter(properties.pinlineRight, 'Pinline', true, hasPT));
+		}
+		frames.push(makeBloomburrowFrameByLetter(properties.pinline, 'Pinline', false, hasPT));
+	}
+	frames.push(makeBloomburrowFrameByLetter(properties.frame, null, false, hasPT));
 
 	card.frames = frames;
 	card.frames.reverse();
@@ -2729,6 +2766,101 @@ function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false, styl
 
 	return frame;
 }
+function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = false, hasPT = false) {
+	letter = letter.toUpperCase();
+
+	if (letter == 'L') {
+		letter = 'C';
+	}
+
+	var frameNames = {
+		'W': 'White',
+		'U': 'Blue',
+		'B': 'Black',
+		'R': 'Red',
+		'G': 'Green',
+		'M': 'Multicolored',
+		'A': 'Artifact',
+		'C': 'Colorless',
+		'V': 'Vehicle',
+		'WL': 'White',
+		'UL': 'Blue',
+		'BL': 'Black',
+		'RL': 'Red',
+		'GL': 'Green',
+		'ML': 'Multicolored'
+	}
+
+	console.log(mask, letter, hasPT);
+
+	var frameName = frameNames[letter];
+
+	if (mask == "Crown") {
+		var frame = {
+			'name': frameName + ' Legendary Accents',
+			'src': '/img/frames/custom/bloomburrowBorderlessColored/crown' + letter + '.png',
+			'masks': [],
+			// 'bounds': {
+			// 	'height': 0.1667,
+			// 	'width': 0.9454,
+			// 	'x': 0.0274,
+			// 	'y': 0.0191
+			// }
+		}
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+		return frame;
+	}
+
+	if (hasPT) {
+		frameName = frameName + " Creature"
+	} else {
+		frameName = frameName + " Noncreature"
+	}
+
+	var frame = {
+		'name': frameName + ' Frame',
+		'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + letter.toLowerCase() + '.png',
+	}
+
+	if (mask) {
+
+		if (mask == 'Pinline') {
+
+			frame.masks = [
+				{
+					'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + mask + 'Mask.png',
+					'name': mask
+				}
+			]
+
+		} else {
+
+			frame.masks = [
+				{
+					'src': '/img/frames/custom/bloomburrowBorderlessColored/' + mask.toLowerCase() + 'Mask.png',
+					'name': mask
+				}
+			]
+		}
+
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+	} else {
+		frame.masks = [];
+	}
+
+	return frame;
+}
+
 function makeCircuitFrameByLetter(letter, mask = false, maskToRightHalf = false) {
 	letter = letter.toUpperCase();
 
