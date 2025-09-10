@@ -1,7 +1,7 @@
 //Create objects for common properties across available frames
 var genericMasks = [{src:'/img/frames/custom/bloomburrowBorderlessColored/titlePinlineMask.png', name:'Title Pinline'}, {src:'/img/frames/custom/bloomburrowBorderlessColored/titleFullMask.png', name:'Title Full'}]
 
-var creatureMasks = genericMasks.concat([{src:'/img/frames/custom/bloomburrowBorderlessColored/creaturePinlineMask.png', name:'Pinline'}, {src:'/img/frames/custom/bloomburrowBorderlessColored/ptMask.png', name:'P/T Pinline'}]);
+var creatureMasks = genericMasks.concat([{src:'/img/frames/custom/bloomburrowBorderlessColored/creaturePinlineMask.png', name:'Pinline'}]);
 var noncreatureMasks = genericMasks.concat([{src:'/img/frames/custom/bloomburrowBorderlessColored/noncreaturePinlineMask.png', name:'Pinline'}]);
 //defines available frames
 availableFrames = [

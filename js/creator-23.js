@@ -2828,7 +2828,7 @@ function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = fa
 
 	var frame = {
 		'name': frameName + ' Frame',
-		'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + letter.toLowerCase() + '.png',
+		'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + letter + '.png',
 	}
 
 	if (mask) {
