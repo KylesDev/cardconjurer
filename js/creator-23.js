@@ -1627,7 +1627,9 @@ function makeM15FrameByLetter(letter, mask = false, maskToRightHalf = false, sty
 
 	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
 		letter = letter[0];
-	}
+	} else if (letter == 'L' && style == 'Nyx') {
+		style = 'regular'
+;	}
 
 	var frameName = frameNames[letter];
 
@@ -2179,6 +2181,8 @@ function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = fa
 function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = false, style, universesBeyond = false) {
 	letter = letter.toUpperCase();
 
+	var isVehicle = letter == 'V';
+
 	if (letter == 'V') {
 		letter = 'A';
 	}
@@ -2285,7 +2289,7 @@ function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = fal
 	if (mask == 'PT') {
 		return {
 			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/borderless/pt/' + letter.toLowerCase() + '.png',
+			'src': '/img/frames/m15/borderless/pt/' + (isVehicle ? 'v' : letter.toLowerCase())+ '.png',
 			'masks': [],
 			'bounds': {
 				'height': 0.066666666666,
@@ -4818,7 +4822,7 @@ function fetchSetSymbol() {
 		uploadSetSymbol('https://api.hexproof.io/symbols/set/' + setCode + '/' + setRarity, 'resetSetSymbol');
 	} else {
 		var extension = 'svg';
-		if (['moc', 'ltr', 'ltc', 'cmm', 'who', 'scd', 'woe', 'wot', 'woc', 'lci', 'lcc', 'mkm', 'mkc', 'otj', 'otc', 'dft', 'drc', 'tdm', 'tdc', 'fin', 'fic'].includes(setCode.toLowerCase())) {
+		if (['moc', 'ltr', 'ltc', 'cmm', 'who', 'scd', 'woe', 'wot', 'woc', 'lci', 'lcc', 'mkm', 'mkc', 'otj', 'otc', 'dft', 'drc', 'tdm', 'tdc', 'fin', 'fic', 'pio', 'om1'].includes(setCode.toLowerCase())) {
 			extension = 'png';
 		}
 		if (setSymbolAliases.has(setCode.toLowerCase())) setCode = setSymbolAliases.get(setCode.toLowerCase());

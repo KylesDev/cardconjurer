@@ -203,6 +203,10 @@
 	font-family: "Magic-Fomalhaut";
 	src: url('../fonts/Magic-Fomalhaut.woff2') format("woff2");
 }
+@font-face {
+	font-family: thunderman;
+	src: url('../fonts/Thunderman.ttf') format("truetype");
+}
 /*Variables*/
 :root {
 	--site-background: url('../img/lowpolyBackground.svg');
