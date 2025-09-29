@@ -214,6 +214,7 @@ const frameNames = new Map ([
 	['Promo Nyx Frames', 'PromoNyx'],
 	['Promo Extended Art Frames', 'PromoExtended'],
 	['Promo Nickname Frames', 'PromoNickname'],
+	['Promo Nickname Frames (Extra Short)', 'IkoNicknameShort'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
 	//textless
 	['Edge of Eternities Basics (EOE)', 'EOEBasics'],

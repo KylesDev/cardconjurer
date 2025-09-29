@@ -5,6 +5,7 @@ loadFramePacks([
 	{name:'Nyx Frames', value:'PromoNyx'},
 	{name:'Extended Art Frames', value:'PromoExtended'},
 	{name:'Nickname Frames', value:'PromoNickname'},
+	{name:'Nickname Frames (Extra Short)', value:'IkoNicknameShort'},
 	{name:'Generic Showcase', value:'PromoGenericShowcase'},
 	{name:'Addons', value:'disabled'},
 	{name:'Legend Crowns', value:'M15LegendCrowns'},
