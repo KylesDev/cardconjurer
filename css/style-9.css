@@ -287,7 +287,7 @@ img {
 }
 /*Fonts*/
 .title {
-	font-family: belerenbsc, fomalhaut;
+	font-family: belerenbsc;
 }
 h1.title {
 	font-size: 4rem;
@@ -297,32 +297,32 @@ h1.title {
 }
 h1 {
 	font-size: 3rem;
-	font-family: Montserrat-SemiBold, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, Magic-Fomalhaut, sans-serif;
+	font-family: Montserrat-SemiBold, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 h2 {
 	font-size: 2.5rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, Magic-Fomalhaut, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 h3 {
 	font-size: 2rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, Magic-Fomalhaut, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 h4 {
 	font-size: 1.5rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, Magic-Fomalhaut, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 h5 {
 	font-size: 1.25rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, Magic-Fomalhaut, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 p {
 	font-size: 1rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, Plantin-MT-Pro-Rg, Plantin-MT-Pro-Rg-It, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	overflow-wrap: break-word;
 }
 a {
@@ -516,7 +516,7 @@ a.underline {
 	background: var(--input-background);
 	color: inherit;
 	font-size: 1.25rem;
-	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, fomalhaut, Plantin-MT-Pro-Rg, Plantin-MT-Pro-It, Geneva, sans-serif;
+	font-family: Montserrat-Medium, Helvetica, Tahoma, Verdana, Geneva, sans-serif;
 	font-weight: 100;
 	border-width: 0.25rem 0 0 0;
 	border-style: solid;
