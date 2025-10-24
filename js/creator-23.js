@@ -7094,11 +7094,43 @@ async function generateDeck() {
 	}
 }
 
+function fetchScryfallCardByExactName(cardName) {
+	return new Promise((resolve, reject) => {
+		const xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				if (this.status == 200) {
+					try {
+						const card = JSON.parse(this.responseText);
+						// Wrap single card in array to maintain compatibility with existing code
+						resolve([card]);
+					} catch (error) {
+						reject(new Error(`Failed to parse card data: ${error.message}`));
+					}
+				} else if (this.status == 404) {
+					reject(new Error(`Card not found: ${cardName}`));
+				} else {
+					reject(new Error(`Failed to fetch card: ${this.status} ${this.statusText}`));
+				}
+			}
+		};
+		
+		// Use the exact name endpoint for precise matching
+		// URL encode the card name properly
+		const encodedName = encodeURIComponent(cardName);
+		const url = `https://api.scryfall.com/cards/named?exact=${encodedName}`;
+		
+		xhttp.open('GET', url, true);
+		try {
+			xhttp.send();
+		} catch (error) {
+			reject(new Error(`Scryfall API request failed: ${error.message}`));
+		}
+	});
+}
+
 function importCardForDeck(cardName) {
 	return new Promise((resolve, reject) => {
-		// Set the import name
-		document.querySelector('#import-name').value = cardName;
-		
 		let importResolved = false;
 		const timeout = setTimeout(() => {
 			if (!importResolved) {
@@ -7106,6 +7138,13 @@ function importCardForDeck(cardName) {
 				reject(new Error(`Timeout importing card: ${cardName}`));
 			}
 		}, 15000); // 15 second timeout for import
+		
+		// Set the flavor text checkbox state from the deck import checkbox
+		const deckFlavorTextCheckbox = document.querySelector('#importFlavorTextDeck');
+		const importFlavorTextCheckbox = document.querySelector('#importFlavorText');
+		if (deckFlavorTextCheckbox && importFlavorTextCheckbox) {
+			importFlavorTextCheckbox.checked = deckFlavorTextCheckbox.checked;
+		}
 		
 		// Hook into the importCard callback
 		const originalImportCard = window.importCard;
@@ -7128,8 +7167,35 @@ function importCardForDeck(cardName) {
 			}, 500);
 		};
 		
-		// Trigger the import
-		importChanged();
+		// Use exact name search for deck imports
+		fetchScryfallCardByExactName(cardName)
+			.then(cardData => {
+				// Set the scryfallCard and populate the UI
+				scryfallCard = cardData;
+				const importIndex = document.querySelector('#import-index');
+				importIndex.innerHTML = '';
+				
+				const card = cardData[0];
+				if (card && card.type_line && card.type_line !== 'Card') {
+					const option = document.createElement('option');
+					option.innerHTML = `${card.name} (${card.type_line})`;
+					option.value = 0;
+					importIndex.appendChild(option);
+				}
+				
+				// Trigger the card import
+				if (window.importCard) {
+					window.importCard(cardData);
+				}
+				changeCardIndex();
+			})
+			.catch(error => {
+				if (!importResolved) {
+					clearTimeout(timeout);
+					importResolved = true;
+					reject(error);
+				}
+			});
 	});
 }
 
