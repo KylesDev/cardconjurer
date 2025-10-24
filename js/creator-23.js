@@ -7183,6 +7183,20 @@ function importCardForDeck(cardName) {
 					importIndex.appendChild(option);
 				}
 				
+				// Also set up the art data with the exact matched card
+				// This prevents the art from being fetched from a different card
+				scryfallArt = [];
+				const artIndex = document.querySelector('#art-index');
+				artIndex.innerHTML = '';
+				
+				if (card && card.image_uris && card.artist) {
+					scryfallArt.push(card);
+					const artOption = document.createElement('option');
+					artOption.innerHTML = `${card.name} (${card.set.toUpperCase()} - ${card.artist})`;
+					artOption.value = 0;
+					artIndex.appendChild(artOption);
+				}
+				
 				// Trigger the card import
 				if (window.importCard) {
 					window.importCard(cardData);
