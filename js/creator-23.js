@@ -5676,20 +5676,37 @@ async function generateDeck() {
 		for (const cardEntry of cards) {
 			if (deckGenerationState.cancelled) break;
 			
-			progressText.textContent = `Processing: ${cardEntry.name} (${cardEntry.copies} copies)`;
+			progressText.textContent = `Importing: ${cardEntry.name}...`;
 			
-			// Import the card
-			await importCardForDeck(cardEntry.name);
-			
-			// Wait for card to be fully loaded and rendered
-			await waitForCardReady();
-			
-			// Generate the card image once
-			await new Promise(resolve => setTimeout(resolve, 500));
-			
-			// Get the card image data
-			const imageData = cardCanvas.toDataURL('image/png');
-			const imageBlob = await (await fetch(imageData)).blob();
+			try {
+				// Import the card from Scryfall
+				await importCardForDeck(cardEntry.name);
+				
+				progressText.textContent = `Loading: ${cardEntry.name}...`;
+				
+				// Wait for art and frames to be fully loaded
+				await waitForCardReady();
+				
+				// Trigger autoframe if enabled
+				if (selectedFrameStyle !== 'false') {
+					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					autoFrame();
+					// Wait for autoframe to complete
+					await new Promise(resolve => setTimeout(resolve, 1000));
+				}
+				
+				// Ensure canvas is fully drawn
+				progressText.textContent = `Rendering: ${cardEntry.name}...`;
+				if (typeof drawCard === 'function') {
+					drawCard();
+				}
+				
+				// Wait for canvas to finish rendering
+				await new Promise(resolve => setTimeout(resolve, 800));
+				
+				// Get the card image data
+				const imageData = cardCanvas.toDataURL('image/png');
+				const imageBlob = await (await fetch(imageData)).blob();
 			
 			// Add to ZIP multiple times based on copies
 			for (let copy = 1; copy <= cardEntry.copies; copy++) {
@@ -5708,6 +5725,11 @@ async function generateDeck() {
 				}
 				
 				deckGenerationState.zip.file(filename, imageBlob);
+			}
+			} catch (cardError) {
+				console.error(`Error processing card ${cardEntry.name}:`, cardError);
+				notify(`Failed to process "${cardEntry.name}": ${cardError.message}`, 3);
+				// Continue with next card instead of failing completely
 			}
 		}
 		
@@ -5751,21 +5773,37 @@ async function generateDeck() {
 }
 
 function importCardForDeck(cardName) {
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		// Set the import name
 		document.querySelector('#import-name').value = cardName;
 		
-		// Create a callback that resolves when import is complete
-		const originalCallback = window.importCard;
-		window.importCard = function(cardObject) {
-			// Call original import function
-			if (originalCallback) {
-				originalCallback(cardObject);
+		let importResolved = false;
+		const timeout = setTimeout(() => {
+			if (!importResolved) {
+				importResolved = true;
+				reject(new Error(`Timeout importing card: ${cardName}`));
 			}
-			// Restore original callback
-			window.importCard = originalCallback;
-			// Resolve the promise
-			setTimeout(resolve, 100);
+		}, 15000); // 15 second timeout for import
+		
+		// Hook into the importCard callback
+		const originalImportCard = window.importCard;
+		window.importCard = function(cardObject) {
+			// Call original function
+			if (originalImportCard && typeof originalImportCard === 'function') {
+				originalImportCard(cardObject);
+			}
+			
+			// Restore original
+			window.importCard = originalImportCard;
+			
+			// Wait a bit for the UI to update and changeCardIndex to be called
+			setTimeout(() => {
+				if (!importResolved) {
+					clearTimeout(timeout);
+					importResolved = true;
+					resolve();
+				}
+			}, 500);
 		};
 		
 		// Trigger the import
@@ -5775,21 +5813,35 @@ function importCardForDeck(cardName) {
 
 function waitForCardReady() {
 	return new Promise((resolve) => {
-		// Wait for art and frame to load
-		let checksRemaining = 20; // 2 seconds max
+		let checksRemaining = 100; // 10 seconds max
+		let lastArtSrc = null;
+		let artStableCount = 0;
+		
 		const checkInterval = setInterval(() => {
 			checksRemaining--;
 			
-			// Check if card is ready (art loaded, autoframe applied)
-			const artLoaded = !art.src.includes('/img/blank.png');
-			const framesAdded = card.frames && card.frames.length > 0;
+			// Check if art has loaded and is stable
+			const artLoaded = art && art.src && !art.src.includes('/img/blank.png');
+			const artComplete = art && art.complete;
 			
-			if ((artLoaded || checksRemaining <= 0) && (framesAdded || checksRemaining <= 0)) {
-				clearInterval(checkInterval);
-				resolve();
+			// Track if art source is stable (not changing)
+			if (art && art.src === lastArtSrc) {
+				artStableCount++;
+			} else {
+				artStableCount = 0;
+				lastArtSrc = art ? art.src : null;
 			}
 			
-			if (checksRemaining <= 0) {
+			// Check if frames have been added
+			const framesAdded = card.frames && card.frames.length > 0;
+			
+			// Card is ready when:
+			// 1. Art is loaded and complete
+			// 2. Art source has been stable for at least 3 checks (300ms)
+			// 3. Frames have been added
+			const isReady = artLoaded && artComplete && artStableCount >= 3 && framesAdded;
+			
+			if (isReady || checksRemaining <= 0) {
 				clearInterval(checkInterval);
 				resolve();
 			}
