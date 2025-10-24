@@ -5567,3 +5567,237 @@ bindInputs('#show-guidelines', '#show-guidelines-2', true);
 loadScript('/js/frames/groupStandard-3.js');
 loadAvailableCards();
 initDraggableArt();
+
+// DECK IMPORT FUNCTIONALITY
+var deckGenerationState = {
+	isGenerating: false,
+	currentIndex: 0,
+	cards: [],
+	zip: null,
+	cancelled: false
+};
+
+function parseDeckList(deckListText) {
+	const lines = deckListText.trim().split('\n');
+	const cards = [];
+	
+	for (const line of lines) {
+		const trimmedLine = line.trim();
+		if (!trimmedLine) continue;
+		
+		// Parse format: {numberOfCopies} {cardName}
+		const match = trimmedLine.match(/^(\d+)\s+(.+)$/);
+		if (match) {
+			const copies = parseInt(match[1], 10);
+			const cardName = match[2].trim();
+			
+			// Validate number of copies
+			if (copies >= 1 && copies <= 100) {
+				cards.push({ name: cardName, copies: copies });
+			} else {
+				console.warn(`Invalid number of copies for card: ${line}`);
+			}
+		} else {
+			console.warn(`Invalid deck list format for line: ${line}`);
+		}
+	}
+	
+	return cards;
+}
+
+async function generateDeck() {
+	if (deckGenerationState.isGenerating) {
+		notify('Deck generation already in progress!', 3);
+		return;
+	}
+	
+	const deckListInput = document.querySelector('#deck-list-input');
+	const deckListText = deckListInput.value;
+	
+	if (!deckListText.trim()) {
+		notify('Please enter a deck list!', 3);
+		return;
+	}
+	
+	const cards = parseDeckList(deckListText);
+	
+	if (cards.length === 0) {
+		notify('No valid cards found in the deck list. Please check the format.', 5);
+		return;
+	}
+	
+	// Calculate total cards to generate
+	const totalCards = cards.reduce((sum, card) => sum + card.copies, 0);
+	
+	// Ask user for confirmation
+	const confirmed = confirm(
+		`This will generate ${totalCards} card image(s) from ${cards.length} unique card(s).\n\n` +
+		`The browser will download a ZIP file containing all cards.\n\n` +
+		`Continue?`
+	);
+	
+	if (!confirmed) {
+		return;
+	}
+	
+	// Initialize state
+	deckGenerationState.isGenerating = true;
+	deckGenerationState.currentIndex = 0;
+	deckGenerationState.cards = cards;
+	deckGenerationState.cancelled = false;
+	deckGenerationState.zip = new JSZip();
+	
+	// Get frame style selection
+	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
+	
+	// Save current autoframe setting to restore later
+	const previousAutoFrame = document.querySelector('#autoFrame').value;
+	
+	// Set the autoframe for deck generation
+	if (selectedFrameStyle !== 'false') {
+		document.querySelector('#autoFrame').value = selectedFrameStyle;
+		localStorage.setItem('autoFrame', selectedFrameStyle);
+	}
+	
+	// Show progress UI
+	const progressDiv = document.querySelector('#deck-progress');
+	const progressText = document.querySelector('#deck-progress-text');
+	const progressBar = document.querySelector('#deck-progress-bar');
+	const generateButton = document.querySelector('#generate-deck-button');
+	
+	progressDiv.style.display = 'block';
+	generateButton.disabled = true;
+	progressBar.max = totalCards;
+	progressBar.value = 0;
+	
+	try {
+		let cardIndex = 0;
+		
+		for (const cardEntry of cards) {
+			if (deckGenerationState.cancelled) break;
+			
+			progressText.textContent = `Processing: ${cardEntry.name} (${cardEntry.copies} copies)`;
+			
+			// Import the card
+			await importCardForDeck(cardEntry.name);
+			
+			// Wait for card to be fully loaded and rendered
+			await waitForCardReady();
+			
+			// Generate the card image once
+			await new Promise(resolve => setTimeout(resolve, 500));
+			
+			// Get the card image data
+			const imageData = cardCanvas.toDataURL('image/png');
+			const imageBlob = await (await fetch(imageData)).blob();
+			
+			// Add to ZIP multiple times based on copies
+			for (let copy = 1; copy <= cardEntry.copies; copy++) {
+				if (deckGenerationState.cancelled) break;
+				
+				cardIndex++;
+				progressBar.value = cardIndex;
+				progressText.textContent = `Adding: ${cardEntry.name} (${copy}/${cardEntry.copies})`;
+				
+				// Create filename with copy number if multiple copies
+				let filename;
+				if (cardEntry.copies > 1) {
+					filename = `${sanitizeFilename(cardEntry.name)}_${copy}.png`;
+				} else {
+					filename = `${sanitizeFilename(cardEntry.name)}.png`;
+				}
+				
+				deckGenerationState.zip.file(filename, imageBlob);
+			}
+		}
+		
+		if (!deckGenerationState.cancelled) {
+			// Generate and download ZIP
+			progressText.textContent = 'Creating ZIP file...';
+			const zipBlob = await deckGenerationState.zip.generateAsync({ type: 'blob' });
+			
+			// Download ZIP
+			const downloadElement = document.createElement('a');
+			downloadElement.href = URL.createObjectURL(zipBlob);
+			downloadElement.download = 'deck_cards.zip';
+			document.body.appendChild(downloadElement);
+			downloadElement.click();
+			downloadElement.remove();
+			
+			progressText.textContent = `Complete! Downloaded ${totalCards} card(s).`;
+			notify('Deck generation complete!', 3);
+		} else {
+			progressText.textContent = 'Generation cancelled.';
+			notify('Deck generation cancelled.', 3);
+		}
+	} catch (error) {
+		console.error('Error generating deck:', error);
+		notify('Error generating deck: ' + error.message, 5);
+		progressText.textContent = 'Error occurred during generation.';
+	} finally {
+		// Restore previous autoframe setting
+		document.querySelector('#autoFrame').value = previousAutoFrame;
+		localStorage.setItem('autoFrame', previousAutoFrame);
+		
+		// Reset state
+		deckGenerationState.isGenerating = false;
+		generateButton.disabled = false;
+		
+		// Hide progress after a delay
+		setTimeout(() => {
+			progressDiv.style.display = 'none';
+		}, 3000);
+	}
+}
+
+function importCardForDeck(cardName) {
+	return new Promise((resolve) => {
+		// Set the import name
+		document.querySelector('#import-name').value = cardName;
+		
+		// Create a callback that resolves when import is complete
+		const originalCallback = window.importCard;
+		window.importCard = function(cardObject) {
+			// Call original import function
+			if (originalCallback) {
+				originalCallback(cardObject);
+			}
+			// Restore original callback
+			window.importCard = originalCallback;
+			// Resolve the promise
+			setTimeout(resolve, 100);
+		};
+		
+		// Trigger the import
+		importChanged();
+	});
+}
+
+function waitForCardReady() {
+	return new Promise((resolve) => {
+		// Wait for art and frame to load
+		let checksRemaining = 20; // 2 seconds max
+		const checkInterval = setInterval(() => {
+			checksRemaining--;
+			
+			// Check if card is ready (art loaded, autoframe applied)
+			const artLoaded = !art.src.includes('/img/blank.png');
+			const framesAdded = card.frames && card.frames.length > 0;
+			
+			if ((artLoaded || checksRemaining <= 0) && (framesAdded || checksRemaining <= 0)) {
+				clearInterval(checkInterval);
+				resolve();
+			}
+			
+			if (checksRemaining <= 0) {
+				clearInterval(checkInterval);
+				resolve();
+			}
+		}, 100);
+	});
+}
+
+function sanitizeFilename(name) {
+	// Remove or replace invalid filename characters
+	return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, '_');
+}
