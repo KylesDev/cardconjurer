@@ -10,6 +10,7 @@ loadFramePacks([
 	{name:'Seventh Edition Snow Lands', value:'SeventhSnowLands'},
 	{name:'Floating Old Border', value:'OldFloating'},
 	{name:'Floating Old Border (Short)', value:'OldFloatingShort'},
+	{name:'Burning Revelation (SLD)', value:'BurningRevelation'},
 
 	{name:'Modern M15 Eighth Edition Style', value:'disabled'},
 	{name:'Regular', value:'M15Eighth'},
@@ -27,6 +28,12 @@ loadFramePacks([
 	{name:'Universes Beyond (Front)', value:'M15EighthTransformUBFront'},
 	{name:'Universes Beyond (Back)', value:'M15EighthTransformUBBack'},
 
+	{name:'Modern M15 Eighth MDFC', value:'disabled'},
+	{name:'Regular (MDFC)', value:'M15EighthModal'},
+	{name:'Nyx (MDFC)', value:'M15EighthModalNyx'},
+	{name:'Snow (MDFC)', value:'M15EighthModalSnow'},
+	{name:'Universes Beyond (MDFC) ', value:'M15EighthModalUB'},
+
 	{name:'Modern M15 Eighth Edition Tokens', value:'disabled'},
 	{name:'Regular', value:'M15EighthToken'},
 	{name:'Nyx', value:'M15EighthNyxToken'},
@@ -41,6 +48,7 @@ loadFramePacks([
 
 	{name:'Classicshifted Series', value:'disabled'},
 	{name:'Classicshifted', value:'Classicshifted'},
+	{name:'Classicshifted Nickname', value:'ClassicshiftedNickname'},
 	{name:'Classicshifted Lands', value:'ClassicshiftedLands'},
 	{name:'Classicshifted Planeswalkers', value:'ClassicshiftedPlaneswalker'},
 	{name:'Classicshifted Planeswalker Transform Addons', value:'ClassicshiftedPlaneswalkerTransform'},
@@ -48,6 +56,19 @@ loadFramePacks([
 	{name:'Classicshifted MDFC Addons', value:'ClassicshiftedDFC'},
 	{name:'Classicshifted Transform Addons', value:'ClassicshiftedTransform'},
 	{name:'Color Identity Pips', value:'ClassicshiftedCIPips'},
+
+	{name:'StoneCutter Series by Smaug', value:'disabled'},
+	{name:'StoneCutter', value:'StoneCutterDeluxe'},
+	{name:'StoneCutter Nickname Addons', value:'StoneCutterDeluxeNicknameAddons'},
+	{name:'StoneCutter Extended Art', value:'StoneCutterDeluxeExtended'},
+	{name:'StoneCutter Planeswalker', value:'StoneCutterDeluxePlaneswalker'},
+	{name:'StoneCutter Planeswalker Extended Art', value:'StoneCutterDeluxePlaneswalkerExtended'},
+	{name:'StoneCutter Planeswalker Transform Addons', value:'StoneCutterDeluxePlaneswalkerTransformAddons'},
+	{name:'StoneCutter Saga', value:'StoneCutterDeluxeSaga'},
+	{name:'StoneCutter Class(y)', value:'StoneCutterDeluxeClass'},
+	{name:'StoneCutter Case', value:'StoneCutterDeluxeCase'},
+	{name:'StoneCutter MDFC Addons', value:'StoneCutterDeluxeDFC'},
+	{name:'StoneCutter Transform Addons', value:'StoneCutterDeluxeTransformAddons'},
 
 	{name:'Showcase Frame Varients', value:'disabled'},
 	{name:'Short Neon (NEO)', value:'NEONeonShort'},
@@ -70,8 +91,13 @@ loadFramePacks([
 	{name:'Magrao\'s Kaldheim', value:'CustomMagraoKaldheim'},
 	{name:'Pokemon', value:'Pokemon'},
 	{name:'Circuit', value:'Circuit'},
+	{name:'Borderless Room Short', value:'BorderlessRoomShort'},
+	{name:'Eldraine Storybook Borderless', value:'StorybookWOEBorderless'},
 
 	{name:'Kyles Custom Frames', value:'disabled'},
 	{name:'Animation Frame', value:'CustomKylesAnimation'},
 	{name:'Minimalist', value:'CustomKylesMinimalist'},
+	{name:'Payne', value:'CustomPayne'},
+	{name:'World of Warcraft', value:'CustomWarcraft'},
+	{name:'Bloomburrow Borderless Colored', value:'BloomburrowBorderlessColored'},
 ])

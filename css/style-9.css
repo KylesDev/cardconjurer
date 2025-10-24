@@ -100,6 +100,10 @@
 	src: url('../fonts/Souvenir-Itc-T-OT-Bold.otf') format('opentype');
 }
 @font-face {
+	font-family: souvenirmed;
+	src: url('../fonts/souvenirstd-medium.otf') format('opentype');
+}
+@font-face {
 	font-family: palatino;
 	src: url('../fonts/Palatino Font.ttf') format('truetype');
 }
@@ -178,6 +182,30 @@
 @font-face {
 	font-family: notosans;
 	src: url('../fonts/NotoSans-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: "Plantin-MT-Pro-Bold";
+	src: url('../fonts/PlantinMTProBold.woff2') format("woff2");
+}
+@font-face {
+	font-family: "Plantin-MT-Pro-Rg";
+	src: url('../fonts/PlantinMTProRg.woff2') format("woff2");
+}
+@font-face {
+	font-family: "Plantin-MT-Pro-Rg-It";
+	src: url('../fonts/PlantinMTProRgIt.woff2') format("woff2");
+}
+@font-face {
+	font-family: "Plantin-MT-Pro-SemiBd-It";
+	src: url('../fonts/PlantinMTProSemiBdIt.woff2') format("woff2");
+}
+@font-face {
+	font-family: "Magic-Fomalhaut";
+	src: url('../fonts/Magic-Fomalhaut.woff2') format("woff2");
+}
+@font-face {
+	font-family: thunderman;
+	src: url('../fonts/Thunderman.ttf') format("truetype");
 }
 /*Variables*/
 :root {
@@ -958,4 +986,10 @@ textarea.input {
 	grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 	grid-gap: 0.5rem;
 	padding: 1rem 2rem;
+}
+#addToTopHalf {
+  grid-row: 2;
+}
+#addToBottomHalf {
+  grid-row: 2;
 }

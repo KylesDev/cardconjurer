@@ -130,6 +130,7 @@
 									<option value='Textless-4'>Textless/Fullart</option>
 									<option disabled>Other Frames</option>
 									<option value='Custom'>Custom</option>
+									<option value='Collection'>Collections</option>
 									<option value='Misc-2'>Old/Misc</option>
 									<option value='Accurate'>Accurate Frames</option>
 									<option value='Margin'>1/8th Inch Margin</option>
@@ -163,6 +164,8 @@
 									<div class='input-grid margin-bottom'>
 										<button id='addToLeftHalf' class='input' onclick='addFrame([{src:"/img/frames/maskLeftHalf.png", name:"Left Half"}])'>Add Frame to Card (Left Half)</button>
 										<button id='addToMiddleThird' class='input' onclick='addFrame([{src:"/img/frames/maskMiddleThird.png", name:"Middle Third"}])'>Add Frame to Card (Middle Third)</button>
+										<button id='addToTopHalf' class='input' onclick='addFrame([{src:"/img/frames/maskTopHalf.png", name:"Top Half"}])'>Add Frame to Card (Top Half)</button>
+										<button id='addToBottomHalf' class='input' onclick='addFrame([{src:"/img/frames/maskBottomHalf.png", name:"Bottom Half"}])'>Add Frame to Card (Bottom Half)</button>
 									</div>
 									<h5 class='padding input-description'>You can now double click frames and masks to add them to the card. You can do so while holding the shift, control, or alt keys to add to the right half, left half, or middle third, respectively.</h5>
 								</div>
@@ -188,7 +191,7 @@
 						<div class='readable-background padding'>
 							<h5 class='input-description margin-bottom'>Rounded Corners (When Downloaded)</h5>
 							<label class='checkbox-container input margin-bottom'>Rounded Corners
-								<input id='rounded-corners' checked="true" type='checkbox' onchange='setRoundedCorners(this.checked);'>
+								<input id='rounded-corners' checked="false" type='checkbox' onchange='setRoundedCorners(this.checked);'>
 								<span class='checkmark'></span>
 							</label>
 							<h5 class='input-description margin-bottom'>Show guidelines for text, art, watermark, and set symbols</h5>
@@ -254,6 +257,9 @@
 									<h5>{right#}</h5><h5>Moves the text # pixels right</h5>
 									<h5>{shadow#}</h5><h5>Changes the shadow distance to # (use {shadow0} to remove the shadow)</h5>
 									<h5>{shadowcolor#}</h5><h5>Changes the shadow color to #</h5>
+									<h5>{outline#}</h5><h5>Changes the Outline Width to # (enables it if not already enabled)</h5>
+									<h5>{outlinecolor___}</h5><h5>Changes the Outline Color to ___ (ie '{outlinecolorblue}'</h5>
+									<h5>{bullet}</h5><h5>Does bullet point •</h5>
 									<h5>{indent}</h5><h5>Indents the rest of the paragraph to the current point</h5>
 									<h5>{/indent}</h5><h5>Removes paragraph indendation</h5>
 									<h5>{kerning#}</h5><h5>Changes the kerning (letter spacing) to #</h5>
@@ -288,6 +294,12 @@
 								<span class='checkmark'></span>
 							</label>
 						</div>
+						<div class='readable-background padding margin-bottom'>
+							<label class='checkbox-container input'>Auto-italicize reminder text
+								<input id='italicize-reminder-text' type='checkbox' onchange='textEdited();'>
+								<span class='checkmark'></span>
+							</label>
+						</div>
 						<div class='readable-background padding'>
 							<h5 class='padding input-description'>Add a textbox to your card</h5>
 							<div class='padding input-grid'>
@@ -306,13 +318,14 @@
 						            <input type='file' multiple accept='.png, .svg, .jpg, .jpeg, .bmp' placeholder='File Upload' class='input' oninput='uploadFiles(event.target.files, uploadArt, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");' data-dropFunction='uploadArt' data-otherParams='autoFit'>
 						        </div>
 						        <div>
-									<input type='url' placeholder='Via URL' class='input' onchange='uploadArt(this.value, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");'>
+									<input type='url' placeholder='Via URL' class='input' onchange='imageURL(this.value, uploadArt, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");'>
 									<h5 class='input-description margin-bottom'></h5>
 										<label class='checkbox-container input'>Autofit when setting art
 											<input id='art-update-autofit' type='checkbox' onchange='setAutofit();'>
 											<span class='checkmark'></span>
 										</label>
 								</div>
+								<button class='input margin-bottom' onclick='pasteArt();'>Paste from clipboard</button>
 							</div>
 							<h5 class='margin-bottom padding input-description'>Or enter a card name</h5>
 							<input id='art-name' type='text' placeholder='Enter Card Name' class='input margin-bottom' onchange="fetchScryfallData(this.value, artFromScryfall, 'art');">
@@ -404,6 +417,13 @@
 							<h5 class='padding margin-bottom input-description'>Clears the Set Symbol, making it blank</h5>
 							<button class='input margin-bottom' onclick='uploadSetSymbol(blank.src);'>Remove Set Symbol</button>
 						</div>
+						<div class='readable-background padding margin-bottom'>
+							<h5 class='input-description margin-bottom'>Click and drag to move set symbol instead of art (hold shift to zoom)</h5>
+							<label class='checkbox-container input margin-bottom'>Click and drag to move set symbol instead of art
+								<input id='drag-target-setSymbol' type='checkbox'>
+								<span class='checkmark'></span>
+							</label>
+						</div>
 						<div class='readable-background padding'>
 							<h5 class='input-description margin-bottom'>Lock the set symbol code (saves between reloads)</h5>
 							<label class='checkbox-container input margin-bottom'>Lock set symbol code
@@ -444,6 +464,7 @@
 								<option value="/img/watermarks/b.svg">Black</option>
 								<option value="/img/watermarks/r.svg">Red</option>
 								<option value="/img/watermarks/g.svg">Green</option>
+								<option value="/img/watermarks/c.svg">Colorless</option>
 								<option disabled>Mechanics</option>
 								<option value="/img/watermarks/ability-foretell.svg">Foretell</option>
 								<option disabled>Phyrexian/Mirrodin</option>
@@ -494,6 +515,11 @@
 								<option value="/img/watermarks/faction-league-of-dastardly-doom.svg">League of Dastardly Doom</option>
 								<option value="/img/watermarks/faction-goblin-explosioneers.svg">Goblin Explosioneers</option>
 								<option value="/img/watermarks/faction-crossbreed-labs.svg">Crossbreed Labs</option>
+								<option disabled>Avatar The Last Airbender (TLA)</option>
+								<option value="/img/watermarks/atla-water.svg">Water Nation</option>
+								<option value="/img/watermarks/atla-earth.svg">Earth Nation</option>
+								<option value="/img/watermarks/atla-fire.svg">Fire Nation</option>
+								<option value="/img/watermarks/atla-air.svg">Air Nation</option>
 								<option disabled>Custome</option>
 								<option value="/img/watermarks/purple.svg">Purple Mana</option>
 							</select>
@@ -647,6 +673,10 @@
 								<input id='importAllPrints' type='checkbox' onchange="importChanged();">
 								<span class='checkmark'></span>
 							</label>
+							<label class='checkbox-container input margin-bottom'>Import flavor text
+								<input id='importFlavorText' type='checkbox' onchange="changeCardIndex();" checked>
+								<span class='checkmark'></span>
+							</label>
 							<h5 class='padding margin-bottom input-description'>Select a specific card to import</h5>
 							<select class='input margin-bottom' id='import-index' onchange='changeCardIndex();'></select>
 							<h5 class='padding input-description'>Select a language for card imports (not all languages will always be available)</h5>
@@ -664,6 +694,10 @@
 								<option value="zht">Traditional Chinese</option>
 								<option value="ph">Phyrexian</option>
 							</select>
+						</div>
+						<div class='readable-background margin-bottom padding'>
+							<h5 class='padding margin-bottom input-description'>Paste full text</h5>
+							<button class='input margin-bottom' onclick='pasteCardText();'>Paste card</button>
 						</div>
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Save your current card</h5>
@@ -757,6 +791,7 @@
 							<option value="UB">Universes Beyond</option>
 							<option value="Etched">Etched</option>
 							<option value="Borderless">Borderless (Alt)</option>
+							<option value="BorderlessUB">Borderless (Alt) (Universes Beyond)</option>
 							<option value="Praetors">Phyrexian</option>
 							<option value="8th">8th Edition</option>
 							<option value="Seventh">Seventh Edition</option>
@@ -770,6 +805,7 @@
 							<option value="Circuit">Circuit</option>
 							<option value="M15Eighth">M15-Eighth</option>
 							<option value="M15EighthUB">M15-Eighth Universes Beyond</option>
+							<option value="BloomburrowBorderlessColored">Bloomburrow Borderless (Colored)</option>
 						</select>
 
 						
