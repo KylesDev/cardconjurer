@@ -7212,7 +7212,7 @@ function importCardForDeck(cardName) {
 				if (window.importCard) {
 					window.importCard(cardData);
 				}
-				changeCardIndex();
+				// Don't call changeCardIndex() here - it's already called by importCard
 			})
 			.catch(error => {
 				if (!importResolved) {
