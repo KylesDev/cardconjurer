@@ -89,6 +89,7 @@ var lastMaskClick = null;
 //for imports
 var scryfallArt;
 var scryfallCard;
+var skipArtFetch = false; // Flag to skip art fetching when we already have exact art
 //for text
 var drawTextBetweenFrames = false;
 var redrawFrames = false;
@@ -6322,7 +6323,14 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('STATION'
 	}
 	//art
 	document.querySelector('#art-name').value = cardToImport.name;
-	fetchScryfallData(cardToImport.name, artFromScryfall, 'art');
+	// Only fetch art if we haven't already set it up (e.g., from exact name matching)
+	if (!skipArtFetch) {
+		fetchScryfallData(cardToImport.name, artFromScryfall, 'art');
+	} else {
+		// We already have the art, just load it
+		changeArtIndex();
+		skipArtFetch = false; // Reset the flag
+	}
 	if (document.querySelector('#importAllPrints').checked) {
 		// document.querySelector('#art-index').value = document.querySelector('#import-index').value;
 		// changeArtIndex();
@@ -7196,6 +7204,9 @@ function importCardForDeck(cardName) {
 					artOption.value = 0;
 					artIndex.appendChild(artOption);
 				}
+				
+				// Set flag to skip art fetching since we already have the exact art
+				skipArtFetch = true;
 				
 				// Trigger the card import
 				if (window.importCard) {
