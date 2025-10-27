@@ -7381,7 +7381,6 @@ async function generateDeckFromZip() {
 	
 	// Create card list from ZIP images
 	const cards = [];
-	const cardCounts = {}; // Track count for each card name
 	
 	for (const [cardName, images] of Object.entries(zipCardImages)) {
 		// Each image represents one copy
