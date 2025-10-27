@@ -6910,6 +6910,8 @@ var deckGenerationState = {
 // Timeout constants for card generation
 const AUTOFRAME_TIMEOUT_MS = 1500; // Time to wait for autoframe to complete
 const CANVAS_RENDER_TIMEOUT_MS = 1000; // Time to wait for canvas rendering to complete
+const ART_LOAD_TIMEOUT_MS = 3000; // Time to wait for art image to load
+const ART_LOAD_POLL_INTERVAL_MS = 250; // Interval for polling art load status
 
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
@@ -7182,31 +7184,32 @@ async function generateSingleCard() {
 		uploadArt(singleImageUpload.imageUrl, 'autoFit');
 		
 		// Wait for art to be fully loaded
-		await new Promise(resolve => {
-			let resolved = false;
-			const resolveOnce = () => {
-				if (!resolved) {
-					resolved = true;
-					resolve();
+		await new Promise((resolve) => {
+			let checkInterval = null;
+			
+			const cleanup = () => {
+				if (checkInterval) {
+					clearInterval(checkInterval);
+					checkInterval = null;
 				}
 			};
 			
 			if (art.complete && art.src === singleImageUpload.imageUrl) {
-				resolveOnce();
+				resolve();
 			} else {
-				// Set a short interval to check if art has loaded
-				const checkInterval = setInterval(() => {
+				// Poll for art completion
+				checkInterval = setInterval(() => {
 					if (art.complete && art.src === singleImageUpload.imageUrl) {
-						clearInterval(checkInterval);
-						resolveOnce();
+						cleanup();
+						resolve();
 					}
-				}, 100);
+				}, ART_LOAD_POLL_INTERVAL_MS);
 				
-				// Fallback timeout in case art doesn't load
+				// Timeout fallback
 				setTimeout(() => {
-					clearInterval(checkInterval);
-					resolveOnce();
-				}, 3000);
+					cleanup();
+					resolve();
+				}, ART_LOAD_TIMEOUT_MS);
 			}
 		});
 		
