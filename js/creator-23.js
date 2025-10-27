@@ -7456,9 +7456,9 @@ async function generateDeckFromZip() {
 				
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 				
-				// Replace the art with the provided image
+				// Replace the art with the provided image and auto-fit it
 				if (cardEntry.imageUrl) {
-					uploadArt(cardEntry.imageUrl);
+					uploadArt(cardEntry.imageUrl, 'autoFit');
 				}
 				
 				// Wait for art and frames to be fully loaded
