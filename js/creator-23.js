@@ -7381,13 +7381,17 @@ async function generateDeckFromZip() {
 	
 	// Create card list from ZIP images
 	const cards = [];
+	const cardCounts = {}; // Track count for each card name
+	
 	for (const [cardName, images] of Object.entries(zipCardImages)) {
 		// Each image represents one copy
 		for (let i = 0; i < images.length; i++) {
 			cards.push({ 
 				name: cardName, 
 				copies: 1,
-				imageUrl: images[i]
+				imageUrl: images[i],
+				copyNumber: i + 1,  // Track which copy this is (1-indexed)
+				totalCopies: images.length  // Total copies of this card
 			});
 		}
 	}
@@ -7486,8 +7490,13 @@ async function generateDeckFromZip() {
 				progressBar.value = cardIndex;
 				progressText.textContent = `Adding: ${cardEntry.name}`;
 				
-				// Create filename
-				const filename = `${sanitizeFilename(cardEntry.name)}.png`;
+				// Create filename with copy number if multiple copies
+				let filename;
+				if (cardEntry.totalCopies > 1) {
+					filename = `${sanitizeFilename(cardEntry.name)}_${cardEntry.copyNumber}.png`;
+				} else {
+					filename = `${sanitizeFilename(cardEntry.name)}.png`;
+				}
 				deckGenerationState.zip.file(filename, imageBlob);
 				successCount.value++;
 				
