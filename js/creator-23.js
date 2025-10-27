@@ -236,6 +236,18 @@ function toggleCreatorTabs(event, target) {
 	Array.from(document.querySelector('#creator-menu-sections').children).forEach(element => element.classList.add('hidden'));
 	document.querySelector('#creator-menu-' + target).classList.remove('hidden');
 	selectSelectable(event);
+	
+	// Hide autoframe and download sections when Import Deck tab is selected
+	const autoframeSection = document.querySelector('#autoframe-section');
+	const downloadSection = document.querySelector('#download-section');
+	
+	if (target === 'importDeck') {
+		if (autoframeSection) autoframeSection.style.display = 'none';
+		if (downloadSection) downloadSection.style.display = 'none';
+	} else {
+		if (autoframeSection) autoframeSection.style.display = '';
+		if (downloadSection) downloadSection.style.display = '';
+	}
 }
 function selectSelectable(event) {
 	var eventTarget = event.target.closest('.selectable');
@@ -5237,27 +5249,24 @@ function drawCard() {
 }
 //DOWNLOADING
 function downloadCard(alt = false, jpeg = false) {
-	if (card.infoArtist.replace(/ /g, '') == '' && !card.artSource.includes('/img/blank.png') && !card.artZoom == 0) {
-		notify('You must credit an artist before downloading!', 5);
+	// Prep file information
+	var imageDataURL;
+	var imageName = getCardName();
+	if (jpeg) {
+		imageDataURL = cardCanvas.toDataURL('image/jpeg', 0.8);
+		imageName = imageName + '.jpeg';
 	} else {
-		// Prep file information
-		var imageDataURL;
-		var imageName = getCardName();
-		if (jpeg) {
-			imageDataURL = cardCanvas.toDataURL('image/jpeg', 0.8);
-			imageName = imageName + '.jpeg';
-		} else {
-			imageDataURL = cardCanvas.toDataURL('image/png');
-			imageName = imageName + '.png';
-		}
-		// Download image
-		if (alt) {
-			const newWindow = window.open('about:blank');
-			setTimeout(function(){
-				newWindow.document.body.appendChild(newWindow.document.createElement('img')).src = imageDataURL;
-				newWindow.document.querySelector('img').style = 'max-height: 100vh; max-width: 100vw;';
-				newWindow.document.body.style = 'padding: 0; margin: 0; text-align: center; background-color: #888;';
-				newWindow.document.title = imageName;
+		imageDataURL = cardCanvas.toDataURL('image/png');
+		imageName = imageName + '.png';
+	}
+	// Download image
+	if (alt) {
+		const newWindow = window.open('about:blank');
+		setTimeout(function(){
+			newWindow.document.body.appendChild(newWindow.document.createElement('img')).src = imageDataURL;
+			newWindow.document.querySelector('img').style = 'max-height: 100vh; max-width: 100vw;';
+			newWindow.document.body.style = 'padding: 0; margin: 0; text-align: center; background-color: #888;';
+			newWindow.document.title = imageName;
 			}, 0);
 		} else {
 			const downloadElement = document.createElement('a');
@@ -5268,7 +5277,6 @@ function downloadCard(alt = false, jpeg = false) {
 			downloadElement.click();
 			downloadElement.remove();
 		}
-	}
 }
 //IMPORT/SAVE TAB
 function importCard(cardObject) {
@@ -6907,6 +6915,12 @@ var deckGenerationState = {
 	cancelled: false
 };
 
+// Timeout constants for card generation
+const AUTOFRAME_TIMEOUT_MS = 1500; // Time to wait for autoframe to complete
+const CANVAS_RENDER_TIMEOUT_MS = 1000; // Time to wait for canvas rendering to complete
+const ART_LOAD_TIMEOUT_MS = 3000; // Time to wait for art image to load
+const ART_LOAD_POLL_INTERVAL_MS = 250; // Interval for polling art load status
+
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
 	const cards = [];
@@ -6941,6 +6955,11 @@ async function generateDeck() {
 		return;
 	}
 	
+	// Check if we have a single image uploaded
+	if (singleImageUpload) {
+		return generateSingleCard();
+	}
+	
 	// Check if we have ZIP images uploaded
 	if (Object.keys(zipCardImages).length > 0) {
 		return generateDeckFromZip();
@@ -6951,7 +6970,7 @@ async function generateDeck() {
 	const deckListText = deckListInput.value;
 	
 	if (!deckListText.trim()) {
-		notify('Please enter a deck list or upload a ZIP file!', 3);
+		notify('Please enter a deck list or upload an image file!', 3);
 		return;
 	}
 	
@@ -7091,6 +7110,156 @@ async function generateDeck() {
 	} catch (error) {
 		console.error('Error generating deck:', error);
 		notify('Error generating deck: ' + error.message, 5);
+		progressText.textContent = 'Error occurred during generation.';
+	} finally {
+		// Restore previous autoframe setting
+		document.querySelector('#autoFrame').value = previousAutoFrame;
+		localStorage.setItem('autoFrame', previousAutoFrame);
+		
+		// Reset state
+		deckGenerationState.isGenerating = false;
+		generateButton.disabled = false;
+		
+		// Hide progress after a delay
+		setTimeout(() => {
+			progressDiv.style.display = 'none';
+		}, 3000);
+	}
+}
+
+async function generateSingleCard() {
+	if (deckGenerationState.isGenerating) {
+		notify('Card generation already in progress!', 3);
+		return;
+	}
+	
+	if (!singleImageUpload) {
+		notify('No image uploaded!', 3);
+		return;
+	}
+	
+	const cardName = singleImageUpload.cardName;
+	
+	// Ask user for confirmation
+	const confirmed = confirm(
+		`This will generate a card for: ${cardName}\n\n` +
+		`The card will be downloaded as a single image file.\n\n` +
+		`Continue?`
+	);
+	
+	if (!confirmed) {
+		return;
+	}
+	
+	// Initialize state
+	deckGenerationState.isGenerating = true;
+	deckGenerationState.cancelled = false;
+	
+	// Get frame style selection
+	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
+	
+	// Save current autoframe setting to restore later
+	const previousAutoFrame = document.querySelector('#autoFrame').value;
+	
+	// Set the autoframe for card generation
+	if (selectedFrameStyle !== 'false') {
+		document.querySelector('#autoFrame').value = selectedFrameStyle;
+		localStorage.setItem('autoFrame', selectedFrameStyle);
+	}
+	
+	// Show progress UI
+	const progressDiv = document.querySelector('#deck-progress');
+	const progressText = document.querySelector('#deck-progress-text');
+	const progressBar = document.querySelector('#deck-progress-bar');
+	const generateButton = document.querySelector('#generate-deck-button');
+	
+	progressDiv.style.display = 'block';
+	generateButton.disabled = true;
+	progressBar.max = 100;
+	progressBar.value = 0;
+	
+	try {
+		progressText.textContent = `Importing: ${cardName}...`;
+		progressBar.value = 20;
+		
+		// Import the card from Scryfall
+		await importCardForDeck(cardName);
+		
+		progressText.textContent = `Loading: ${cardName}...`;
+		progressBar.value = 40;
+		
+		// Replace the art with the provided image and auto-fit it
+		uploadArt(singleImageUpload.imageUrl, 'autoFit');
+		
+		// Wait for art to be fully loaded
+		await new Promise((resolve) => {
+			let checkInterval = null;
+			
+			const cleanup = () => {
+				if (checkInterval) {
+					clearInterval(checkInterval);
+					checkInterval = null;
+				}
+			};
+			
+			if (art.complete && art.src === singleImageUpload.imageUrl) {
+				resolve();
+			} else {
+				// Poll for art completion
+				checkInterval = setInterval(() => {
+					if (art.complete && art.src === singleImageUpload.imageUrl) {
+						cleanup();
+						resolve();
+					}
+				}, ART_LOAD_POLL_INTERVAL_MS);
+				
+				// Timeout fallback
+				setTimeout(() => {
+					cleanup();
+					resolve();
+				}, ART_LOAD_TIMEOUT_MS);
+			}
+		});
+		
+		// Wait for card and frames to be fully loaded
+		await waitForCardReady();
+		
+		progressText.textContent = `Framing: ${cardName}...`;
+		progressBar.value = 60;
+		
+		// Trigger autoframe if enabled
+		if (selectedFrameStyle !== 'false') {
+			autoFrame();
+			// Wait for autoframe to complete - use longer timeout for complex frames
+			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
+		}
+		
+		// Ensure canvas is fully drawn
+		progressText.textContent = `Rendering: ${cardName}...`;
+		progressBar.value = 80;
+		
+		if (typeof drawCard === 'function') {
+			drawCard();
+		}
+		
+		// Wait for canvas to finish rendering - increased timeout for complex cards
+		await new Promise(resolve => setTimeout(resolve, CANVAS_RENDER_TIMEOUT_MS));
+		
+		progressBar.value = 90;
+		
+		// Download the single card image
+		progressText.textContent = `Downloading: ${cardName}...`;
+		
+		// Use the existing downloadCard function
+		downloadCard();
+		
+		progressBar.value = 100;
+		progressText.textContent = `Complete! Card downloaded.`;
+		notify('Card generation complete!', 3);
+		
+	} catch (error) {
+		console.error('Error generating card:', error);
+		notify('Error generating card: ' + error.message, 5);
 		progressText.textContent = 'Error occurred during generation.';
 	} finally {
 		// Restore previous autoframe setting
@@ -7275,12 +7444,70 @@ function sanitizeFilename(name) {
 
 // ZIP Upload functionality for Import Deck
 let zipCardImages = {}; // Global variable to store card images from ZIP
+let singleImageUpload = null; // Global variable to store single image upload
+
+// Handle file upload - supports both single images and ZIP files
+async function handleFileUpload(event) {
+	const file = event.target.files[0];
+	if (!file) return;
+	
+	const extension = file.name.split('.').pop().toLowerCase();
+	
+	// Check if it's a ZIP file
+	if (extension === 'zip') {
+		return handleZipUpload(event);
+	}
+	
+	// Check if it's a single image file
+	if (['jpg', 'jpeg', 'png'].includes(extension)) {
+		return handleSingleImageUpload(event);
+	}
+	
+	notify('Please upload a valid image file (PNG, JPG, JPEG) or ZIP file.', 3);
+}
+
+async function handleSingleImageUpload(event) {
+	const file = event.target.files[0];
+	if (!file) return;
+	
+	try {
+		// Clear any existing uploads
+		clearUploadedFiles();
+		
+		const cardName = parseImageFilename(file.name);
+		const imageUrl = URL.createObjectURL(file);
+		
+		// Store single image upload
+		singleImageUpload = {
+			cardName: cardName,
+			imageUrl: imageUrl,
+			fileName: file.name
+		};
+		
+		notify(`Loaded single image: ${cardName}`, 3);
+		
+		// Show the clear button
+		const clearButton = document.querySelector('#clear-zip-button');
+		if (clearButton) {
+			clearButton.style.display = 'block';
+		}
+		
+		// Clear the file input so the same file can be uploaded again if needed
+		event.target.value = '';
+	} catch (error) {
+		console.error('Error processing single image:', error);
+		notify('Failed to process image file: ' + error.message, 5);
+	}
+}
 
 async function handleZipUpload(event) {
 	const file = event.target.files[0];
 	if (!file) return;
 	
 	try {
+		// Clear any existing uploads
+		clearUploadedFiles();
+		
 		const zip = await JSZip.loadAsync(file);
 		zipCardImages = {};
 		const imageFiles = [];
@@ -7330,6 +7557,17 @@ async function handleZipUpload(event) {
 	}
 }
 
+function clearUploadedFiles() {
+	// Clear single image upload
+	if (singleImageUpload) {
+		URL.revokeObjectURL(singleImageUpload.imageUrl);
+		singleImageUpload = null;
+	}
+	
+	// Clear ZIP images
+	clearZipImages();
+}
+
 function clearZipImages() {
 	// Release object URLs to free memory
 	for (const cardName in zipCardImages) {
@@ -7339,6 +7577,11 @@ function clearZipImages() {
 	}
 	
 	zipCardImages = {};
+}
+
+function clearUploadedFilesUI() {
+	// Call the actual clear function
+	clearUploadedFiles();
 	
 	// Hide the clear button
 	const clearButton = document.querySelector('#clear-zip-button');
@@ -7352,7 +7595,7 @@ function clearZipImages() {
 		zipInput.value = '';
 	}
 	
-	notify('ZIP images cleared.', 2);
+	notify('Uploaded files cleared.', 2);
 }
 
 function parseImageFilename(filename) {
