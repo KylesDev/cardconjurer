@@ -7177,7 +7177,18 @@ async function generateSingleCard() {
 		// Replace the art with the provided image and auto-fit it
 		uploadArt(singleImageUpload.imageUrl, 'autoFit');
 		
-		// Wait for art and frames to be fully loaded
+		// Wait for art to be fully loaded
+		await new Promise(resolve => {
+			if (art.complete && art.src === singleImageUpload.imageUrl) {
+				resolve();
+			} else {
+				art.onload = () => resolve();
+				// Fallback timeout in case onload doesn't fire
+				setTimeout(resolve, 2000);
+			}
+		});
+		
+		// Wait for card and frames to be fully loaded
 		await waitForCardReady();
 		
 		progressText.textContent = `Framing: ${cardName}...`;
@@ -7186,8 +7197,8 @@ async function generateSingleCard() {
 		// Trigger autoframe if enabled
 		if (selectedFrameStyle !== 'false') {
 			autoFrame();
-			// Wait for autoframe to complete
-			await new Promise(resolve => setTimeout(resolve, 1000));
+			// Wait for autoframe to complete - use longer timeout for complex frames
+			await new Promise(resolve => setTimeout(resolve, 1500));
 		}
 		
 		// Ensure canvas is fully drawn
@@ -7198,8 +7209,8 @@ async function generateSingleCard() {
 			drawCard();
 		}
 		
-		// Wait for canvas to finish rendering
-		await new Promise(resolve => setTimeout(resolve, 800));
+		// Wait for canvas to finish rendering - increased timeout for complex cards
+		await new Promise(resolve => setTimeout(resolve, 1000));
 		
 		progressBar.value = 90;
 		
