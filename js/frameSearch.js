@@ -12,11 +12,15 @@ const frameNames = new Map ([
 	['Miracle', 'M15Miracle'],
 	['Holo Stamps', 'M15HoloStamps'],
 	['Nicknames', 'M15Nickname-2'],
+	['Smooth Nickname Legend Crowns', 'M15SmoothNickname'],
 	['Dark Power/Toughness', 'M15DarkPT'],
 	['Colored Borders', 'M15Borders'],
 	['Color Identity Pips', 'M15CIPips'],
 	['"The List" Stamp', 'TheList'],
 	['Lands', 'M15Lands'],
+	['Stations', 'StationRegular'],
+	['Borderless Stations', 'StationBorderless'],
+	['Omens (Tarkir Dragonstorm)', 'Omen'],
 	['Rooms (Duskmourn)', 'Room'],
 	['Rooms (Universes Beyond)', 'RoomUB'],
 	['Spree (Outlaws of Thunder Junction)', 'Spree'],
@@ -34,21 +38,28 @@ const frameNames = new Map ([
 	['Devoid (Zendikar)', 'M15Devoid'],
 	['Aftermath (Amonkhet)', 'Aftermath'],
 	['Flip (Kamigawa)', 'Flip'],
-	['Levelers (Zendikar)', 'Levelers'],
+	['Levelers (Zendikar)', 'Leveler'],
 	['Split Cards', 'Split'],
 	['Fuse Cards', 'Fuse'],
 	['Conspiracies (Draft Matters)', 'Conspiracy'],
 	['Colorshifted (Planar Chaos)', 'Colorshifted'],
 	['Brawl Legend Crowns', 'Brawl'],
-	//
+	// Showcase
+	['Borderless Stellar Sights (EOS)', 'BorderlessStellarSights'],
+	['Poster Stellar Sights (EOS)', 'PosterStellarSights'],
+	['Draconic (TDM)', 'Draconic'],
+	['Ghostfire (TDM)', 'Ghostfire'],
 	['Japan Showcase', 'JapanShowcase'],
+	['Japan Showcase Nicknames', 'JapanShowcaseNicknames'],
 	['Paranormal (DSK)', 'Paranormal'],
+	['Borderless Room (DSK)', 'BorderlessRoom'],
 	['Bloomburrow Borderless (BLB)', 'BloomburrowBorderless'],
 	['Woodland (BLB)', 'Woodland'],
 	['Memory Corridor (ACR) (Assassin\'s Creed)', 'MemoryCorridor'],
 	['Breaking News (OTP)', 'BreakingNews'],
 	['Vault (BIG)', 'Vault'],
 	['Wanted Poster (OTJ)', 'Wanted'],
+	['Showcase Magnified (MKM)', 'ShowcaseMagnified'],
 	['Dossier (MKM)', 'Dossier'],
 	['Legends of Ixalan - Pattern 1 (LCI)', 'IxalanLegends1'],
 	['Legends of Ixalan - Pattern 2 (LCI)', 'IxalanLegends2'],
@@ -63,6 +74,7 @@ const frameNames = new Map ([
 	['Ravnica City (MOM)', 'Ravnica'],
 	['Tarkir Sketch (MOM)', 'Tarkir'],
 	['Oil Slick (ONE)', 'OilSlick'],
+	['Shattered Glass (BOT)', 'ShatteredGlass'],
 	['Stained Glass (DMU)', 'DMUStainedGlass'],
 	['Golden Age (SNC)', 'SNCGilded'],
 	['Art Deco (SNC)', 'SNCArtDeco'],
@@ -137,6 +149,8 @@ const frameNames = new Map ([
 	['Sagas', 'SagaRegular'],
 	['Sagas (Universes Beyond)', 'SagaUB'],
 	['Sagas (Scrolls of Middle-earth) (LTR)', 'SagaLTR'],
+	['Saga Creatures (Summons)', 'SagaCreature'],
+	['Saga Creatures (Universes Beyond) (Summons) (FIN)', 'SagaCreatureUB'],
 	//dfc
 	['Transform (Front)', 'M15TransformFront'],
 	['Transform (Back)', 'M15TransformBack'],
@@ -203,8 +217,10 @@ const frameNames = new Map ([
 	['Promo Nyx Frames', 'PromoNyx'],
 	['Promo Extended Art Frames', 'PromoExtended'],
 	['Promo Nickname Frames', 'PromoNickname'],
+	['Promo Nickname Frames (Extra Short)', 'IkoNicknameShort'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
 	//textless
+	['Edge of Eternities Basics (EOE)', 'EOEBasics'],
 	['Kamigawa Basics (NEO)', 'NeoBasics'],
 	['Fullart Basics (2022)', 'TextlessBasics2022'],
 	['Fullart Basics (Universes Beyond)', 'TextlessBasics2022UB'],
@@ -231,7 +247,9 @@ const frameNames = new Map ([
 	['Seventh Edition Snow Lands', 'SeventhSnowLands'],
 	['Floating Old Border', 'OldFloating'],
 	['Floating Old Border (Short)', 'OldFloatingShort'],
+	['Burning Revelation (SLD)', 'BurningRevelation'],
 	['Classicshifted', 'Classicshifted'],
+	['Classicshifted Nickname', 'ClassicshiftedNickname'],
 	['Classicshifted Lands', 'ClassicshiftedLands'],
 	['Classicshifted Planeswalkers', 'ClassicshiftedPlaneswalker'],
 	['Classicshifted Planeswalker Transform Addons', 'ClassicshiftedPlaneswalkerTransform'],
@@ -239,6 +257,17 @@ const frameNames = new Map ([
 	['Classicshifted MDFC Addons', 'ClassicshiftedDFC'],
 	['Classicshifted Transform Addons', 'ClassicshiftedTransform'],
 	['Classicshifted Color Identity Pips', 'ClassicshiftedCIPips'],
+	['StoneCutter', 'StoneCutterDeluxe'],
+	['StoneCutter Nickname Addons', 'StoneCutterDeluxeNicknameAddons'],
+	['StoneCutter Extended Art', 'StoneCutterDeluxeExtended'],
+	['StoneCutter Planeswalkers', 'StoneCutterDeluxePlaneswalker'],
+	['StoneCutter Planeswalkers Extended', 'StoneCutterDeluxePlaneswalkerExtended'],
+	['StoneCutter Planeswalkers  Transform Addons', 'StoneCutterDeluxePlaneswalkerTransformAddons'],
+	['StoneCutter Sagas', 'StoneCutterDeluxeSaga'],
+	['StoneCutter Class(y)', 'StoneCutterDeluxeClass'],
+	['StoneCutter Case', 'StoneCutterDeluxeCase'],
+	['StoneCutter MDFC Addons', 'StoneCutterDeluxeDFC'],
+	['StoneCutter Transform Addons', 'StoneCutterDeluxeTransformAddons'],
 	['Short Neon (NEO)', 'NEONeonShort'],
 	['Colored Golden Age (SNC)', 'SNCGildedColored'],
 	['Textless Golden Age (SNC)', 'SNCGildedTextless'],
@@ -253,10 +282,17 @@ const frameNames = new Map ([
 	['Magrao\'s Kaldheim', 'CustomMagraoKaldheim'],
 	['Pokemon', 'Pokemon'],
 	['Circuit', 'Circuit'],
+	['Borderless Room Short', 'BorderlessRoomShort'],
+	['Storybook WOE Borderless', 'StorybookWOEBorderless'],
 
 	//Custom - Kyles
 	['Animation Frame', 'CustomKylesAnimation'],
 	['Minimalist', 'CustomKylesMinimalist'],
+	['Payne', 'CustomPayne'],
+	['Bloomburrow Borderless Colored', 'BloomburrowBorderlessColored'],
+
+	// Collections
+	['Japanese Collection', 'JapanCollection']
 ]);
 
 frameSearch = (str) => {
@@ -285,7 +321,7 @@ function autocomplete(inp, arr) {
 				b.setAttribute("class", "input")
 				b.innerHTML = arr[i];
 				b.addEventListener("click", function(e) {
-					inp.value = this.innerHTML;
+					inp.value = this.textContent;
 					frameSearch(inp.value);
               		closeAllLists();
           		});

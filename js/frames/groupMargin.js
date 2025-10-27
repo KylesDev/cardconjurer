@@ -1,6 +1,11 @@
 loadFramePacks([
 	{name:'Generic Margins', value:'Margin-1'},
+	{name:'Edge of Eternities Basics (EOE)', value:'MarginEOEBasics'},
+	{name:'Borderless Stellar Sights', value:'MarginBorderlessStellarSights'},
+	{name:'Poster Stellar Sights', value:'MarginPosterStellarSights'},
+	{name:'Draconic Margins', value:'MarginDraconic'},
 	{name:'Japan Showcase Margins', value:'MarginJapanShowcase'},
+	{name:'Showcase Magnified Margins', value:'MarginShowcaseMagnified'},
 	{name:'Legends of Ixalan Margins', value:'MarginIxalanLegends'},
 	{name:'Memory Corridor Margins', value:'MarginMemoryCorridor'},
 	{name:'Breaking News Margin', value:'MarginBreakingNews'},
@@ -55,8 +60,11 @@ var loadMarginVersion = async () => {
 	if (card.version.includes('saga')) {
 		sagaEdited();
 	}
-	if (card.version.includes('class') && !card.version.includes('classicshifted')) {
+	if (card.version.includes('class') && !card.version.includes('classic')) {
 		classEdited();
+	}
+	if (card.version.includes('station')) {
+		stationEdited();
 	}
 	drawTextBuffer();
 	drawFrames();
