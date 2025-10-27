@@ -6907,6 +6907,10 @@ var deckGenerationState = {
 	cancelled: false
 };
 
+// Timeout constants for card generation
+const AUTOFRAME_TIMEOUT_MS = 1500; // Time to wait for autoframe to complete
+const CANVAS_RENDER_TIMEOUT_MS = 1000; // Time to wait for canvas rendering to complete
+
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
 	const cards = [];
@@ -7179,12 +7183,30 @@ async function generateSingleCard() {
 		
 		// Wait for art to be fully loaded
 		await new Promise(resolve => {
+			let resolved = false;
+			const resolveOnce = () => {
+				if (!resolved) {
+					resolved = true;
+					resolve();
+				}
+			};
+			
 			if (art.complete && art.src === singleImageUpload.imageUrl) {
-				resolve();
+				resolveOnce();
 			} else {
-				art.onload = () => resolve();
-				// Fallback timeout in case onload doesn't fire
-				setTimeout(resolve, 2000);
+				// Set a short interval to check if art has loaded
+				const checkInterval = setInterval(() => {
+					if (art.complete && art.src === singleImageUpload.imageUrl) {
+						clearInterval(checkInterval);
+						resolveOnce();
+					}
+				}, 100);
+				
+				// Fallback timeout in case art doesn't load
+				setTimeout(() => {
+					clearInterval(checkInterval);
+					resolveOnce();
+				}, 3000);
 			}
 		});
 		
@@ -7198,7 +7220,7 @@ async function generateSingleCard() {
 		if (selectedFrameStyle !== 'false') {
 			autoFrame();
 			// Wait for autoframe to complete - use longer timeout for complex frames
-			await new Promise(resolve => setTimeout(resolve, 1500));
+			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
 		}
 		
 		// Ensure canvas is fully drawn
@@ -7210,7 +7232,7 @@ async function generateSingleCard() {
 		}
 		
 		// Wait for canvas to finish rendering - increased timeout for complex cards
-		await new Promise(resolve => setTimeout(resolve, 1000));
+		await new Promise(resolve => setTimeout(resolve, CANVAS_RENDER_TIMEOUT_MS));
 		
 		progressBar.value = 90;
 		
