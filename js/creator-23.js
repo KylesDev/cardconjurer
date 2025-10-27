@@ -236,6 +236,18 @@ function toggleCreatorTabs(event, target) {
 	Array.from(document.querySelector('#creator-menu-sections').children).forEach(element => element.classList.add('hidden'));
 	document.querySelector('#creator-menu-' + target).classList.remove('hidden');
 	selectSelectable(event);
+	
+	// Hide autoframe and download sections when Import Deck tab is selected
+	const autoframeSection = document.querySelector('#autoframe-section');
+	const downloadSection = document.querySelector('#download-section');
+	
+	if (target === 'importDeck') {
+		if (autoframeSection) autoframeSection.style.display = 'none';
+		if (downloadSection) downloadSection.style.display = 'none';
+	} else {
+		if (autoframeSection) autoframeSection.style.display = '';
+		if (downloadSection) downloadSection.style.display = '';
+	}
 }
 function selectSelectable(event) {
 	var eventTarget = event.target.closest('.selectable');
