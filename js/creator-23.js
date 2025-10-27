@@ -6941,11 +6941,17 @@ async function generateDeck() {
 		return;
 	}
 	
+	// Check if we have ZIP images uploaded
+	if (Object.keys(zipCardImages).length > 0) {
+		return generateDeckFromZip();
+	}
+	
+	// Otherwise, use the text decklist
 	const deckListInput = document.querySelector('#deck-list-input');
 	const deckListText = deckListInput.value;
 	
 	if (!deckListText.trim()) {
-		notify('Please enter a deck list!', 3);
+		notify('Please enter a deck list or upload a ZIP file!', 3);
 		return;
 	}
 	
@@ -7265,4 +7271,290 @@ function waitForCardReady() {
 function sanitizeFilename(name) {
 	// Remove or replace invalid filename characters
 	return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, '_');
+}
+
+// ZIP Upload functionality for Import Deck
+let zipCardImages = {}; // Global variable to store card images from ZIP
+
+async function handleZipUpload(event) {
+	const file = event.target.files[0];
+	if (!file) return;
+	
+	try {
+		const zip = await JSZip.loadAsync(file);
+		zipCardImages = {};
+		const imageFiles = [];
+		
+		// Extract all image files
+		zip.forEach((relativePath, zipEntry) => {
+			const fileName = relativePath.split('/').pop(); // Get filename without path
+			const extension = fileName.split('.').pop().toLowerCase();
+			
+			// Check if it's an image file
+			if (['jpg', 'jpeg', 'png'].includes(extension) && !fileName.startsWith('.')) {
+				imageFiles.push({ fileName, zipEntry });
+			}
+		});
+		
+		if (imageFiles.length === 0) {
+			notify('No valid image files found in ZIP. Please include JPG or PNG files.', 5);
+			return;
+		}
+		
+		// Process each image
+		for (const { fileName, zipEntry } of imageFiles) {
+			const cardName = parseImageFilename(fileName);
+			const blob = await zipEntry.async('blob');
+			const imageUrl = URL.createObjectURL(blob);
+			
+			// Store image URL by card name
+			if (!zipCardImages[cardName]) {
+				zipCardImages[cardName] = [];
+			}
+			zipCardImages[cardName].push(imageUrl);
+		}
+		
+		notify(`Loaded ${imageFiles.length} image(s) from ZIP for ${Object.keys(zipCardImages).length} unique card(s).`, 3);
+		
+		// Show the clear button
+		const clearButton = document.querySelector('#clear-zip-button');
+		if (clearButton) {
+			clearButton.style.display = 'block';
+		}
+		
+		// Clear the file input so the same file can be uploaded again if needed
+		event.target.value = '';
+	} catch (error) {
+		console.error('Error processing ZIP:', error);
+		notify('Failed to process ZIP file: ' + error.message, 5);
+	}
+}
+
+function clearZipImages() {
+	// Release object URLs to free memory
+	for (const cardName in zipCardImages) {
+		for (const url of zipCardImages[cardName]) {
+			URL.revokeObjectURL(url);
+		}
+	}
+	
+	zipCardImages = {};
+	
+	// Hide the clear button
+	const clearButton = document.querySelector('#clear-zip-button');
+	if (clearButton) {
+		clearButton.style.display = 'none';
+	}
+	
+	// Clear the file input
+	const zipInput = document.querySelector('#deck-zip-input');
+	if (zipInput) {
+		zipInput.value = '';
+	}
+	
+	notify('ZIP images cleared.', 2);
+}
+
+function parseImageFilename(filename) {
+	// Remove file extension
+	let name = filename.substring(0, filename.lastIndexOf('.'));
+	
+	// Remove copy number suffix like _(2), _(3), etc.
+	name = name.replace(/_\(\d+\)$/, '');
+	
+	// Replace underscores with spaces
+	name = name.replace(/_/g, ' ');
+	
+	return name.trim();
+}
+
+async function generateDeckFromZip() {
+	if (deckGenerationState.isGenerating) {
+		notify('Deck generation already in progress!', 3);
+		return;
+	}
+	
+	if (Object.keys(zipCardImages).length === 0) {
+		notify('Please upload a ZIP file first!', 3);
+		return;
+	}
+	
+	// Create card list from ZIP images
+	const cards = [];
+	
+	for (const [cardName, images] of Object.entries(zipCardImages)) {
+		// Each image represents one copy
+		for (let i = 0; i < images.length; i++) {
+			cards.push({ 
+				name: cardName, 
+				copies: 1,
+				imageUrl: images[i],
+				copyNumber: i + 1,  // Track which copy this is (1-indexed)
+				totalCopies: images.length  // Total copies of this card
+			});
+		}
+	}
+	
+	const totalCards = cards.length;
+	const uniqueCards = Object.keys(zipCardImages).length;
+	
+	// Ask user for confirmation
+	const confirmed = confirm(
+		`This will generate ${totalCards} card image(s) from ${uniqueCards} unique card(s).\n\n` +
+		`The browser will download a ZIP file containing all cards.\n\n` +
+		`Continue?`
+	);
+	
+	if (!confirmed) {
+		return;
+	}
+	
+	// Initialize state
+	deckGenerationState.isGenerating = true;
+	deckGenerationState.currentIndex = 0;
+	deckGenerationState.cards = cards;
+	deckGenerationState.cancelled = false;
+	deckGenerationState.zip = new JSZip();
+	
+	// Get frame style selection
+	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
+	
+	// Save current autoframe setting to restore later
+	const previousAutoFrame = document.querySelector('#autoFrame').value;
+	
+	// Set the autoframe for deck generation
+	if (selectedFrameStyle !== 'false') {
+		document.querySelector('#autoFrame').value = selectedFrameStyle;
+		localStorage.setItem('autoFrame', selectedFrameStyle);
+	}
+	
+	// Show progress UI
+	const progressDiv = document.querySelector('#deck-progress');
+	const progressText = document.querySelector('#deck-progress-text');
+	const progressBar = document.querySelector('#deck-progress-bar');
+	const generateButton = document.querySelector('#generate-deck-button');
+	
+	progressDiv.style.display = 'block';
+	generateButton.disabled = true;
+	progressBar.max = totalCards;
+	progressBar.value = 0;
+	
+	const failedCards = [];
+	const successCount = { value: 0 };
+	
+	try {
+		let cardIndex = 0;
+		
+		for (const cardEntry of cards) {
+			if (deckGenerationState.cancelled) break;
+			
+			progressText.textContent = `Importing: ${cardEntry.name}...`;
+			
+			try {
+				// Import the card from Scryfall
+				await importCardForDeck(cardEntry.name);
+				
+				progressText.textContent = `Loading: ${cardEntry.name}...`;
+				
+				// Replace the art with the provided image and auto-fit it
+				if (cardEntry.imageUrl) {
+					uploadArt(cardEntry.imageUrl, 'autoFit');
+				}
+				
+				// Wait for art and frames to be fully loaded
+				await waitForCardReady();
+				
+				// Trigger autoframe if enabled
+				if (selectedFrameStyle !== 'false') {
+					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					autoFrame();
+					// Wait for autoframe to complete
+					await new Promise(resolve => setTimeout(resolve, 1000));
+				}
+				
+				// Ensure canvas is fully drawn
+				progressText.textContent = `Rendering: ${cardEntry.name}...`;
+				if (typeof drawCard === 'function') {
+					drawCard();
+				}
+				
+				// Wait for canvas to finish rendering
+				await new Promise(resolve => setTimeout(resolve, 800));
+				
+				// Get the card image data
+				const imageData = cardCanvas.toDataURL('image/png');
+				const imageBlob = await (await fetch(imageData)).blob();
+				
+				cardIndex++;
+				progressBar.value = cardIndex;
+				progressText.textContent = `Adding: ${cardEntry.name}`;
+				
+				// Create filename with copy number if multiple copies
+				let filename;
+				if (cardEntry.totalCopies > 1) {
+					filename = `${sanitizeFilename(cardEntry.name)}_${cardEntry.copyNumber}.png`;
+				} else {
+					filename = `${sanitizeFilename(cardEntry.name)}.png`;
+				}
+				deckGenerationState.zip.file(filename, imageBlob);
+				successCount.value++;
+				
+			} catch (cardError) {
+				console.error(`Error processing card ${cardEntry.name}:`, cardError);
+				failedCards.push(cardEntry.name);
+				cardIndex++;
+				progressBar.value = cardIndex;
+				// Continue with next card instead of failing completely
+			}
+		}
+		
+		if (!deckGenerationState.cancelled) {
+			// Generate and download ZIP
+			progressText.textContent = 'Creating ZIP file...';
+			const zipBlob = await deckGenerationState.zip.generateAsync({ type: 'blob' });
+			
+			// Download ZIP
+			const downloadElement = document.createElement('a');
+			downloadElement.href = URL.createObjectURL(zipBlob);
+			downloadElement.download = 'deck_cards.zip';
+			document.body.appendChild(downloadElement);
+			downloadElement.click();
+			downloadElement.remove();
+			
+			progressText.textContent = `Complete! Downloaded ${successCount.value} card(s).`;
+			
+			// Show summary notification
+			if (failedCards.length > 0) {
+				notify(
+					`Generation complete!<br>` +
+					`Successfully created: ${successCount.value} card(s)<br>` +
+					`Failed: ${failedCards.length} card(s)<br>` +
+					`Failed cards: ${failedCards.join(', ')}`,
+					10
+				);
+			} else {
+				notify(`Deck generation complete! Successfully created ${successCount.value} card(s).`, 3);
+			}
+		} else {
+			progressText.textContent = 'Generation cancelled.';
+			notify('Deck generation cancelled.', 3);
+		}
+	} catch (error) {
+		console.error('Error generating deck:', error);
+		notify('Error generating deck: ' + error.message, 5);
+		progressText.textContent = 'Error occurred during generation.';
+	} finally {
+		// Restore previous autoframe setting
+		document.querySelector('#autoFrame').value = previousAutoFrame;
+		localStorage.setItem('autoFrame', previousAutoFrame);
+		
+		// Reset generation state
+		deckGenerationState.isGenerating = false;
+		generateButton.disabled = false;
+		
+		// Hide progress after 5 seconds
+		setTimeout(() => {
+			progressDiv.style.display = 'none';
+		}, 5000);
+	}
 }

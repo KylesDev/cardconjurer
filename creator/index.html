@@ -734,6 +734,16 @@
 							<textarea id='deck-list-input' class='input margin-bottom' placeholder='1 Negate&#10;1 Pilgrim&apos;s Eye&#10;15 Plains&#10;1 Port Town' rows='15'></textarea>
 						</div>
 						<div class='readable-background margin-bottom padding'>
+							<h5 class='padding margin-bottom input-description'>Or upload a ZIP file of card images</h5>
+							<h5 class='padding margin-bottom input-description'>Each image filename should be the card name (e.g., "Forest.jpg", "Spider-Man 2099.png")</h5>
+							<h5 class='padding margin-bottom input-description'>Multiple copies can be indicated with _(number) suffix (e.g., "Plains_(2).png")</h5>
+							<div class='padding drop-area'>
+					            <h5 class='margin-bottom padding input-description'>Drag and drop ZIP file or click to select</h5>
+					            <input id='deck-zip-input' type='file' accept='.zip' placeholder='Upload ZIP' class='input' onchange='handleZipUpload(event);'>
+							</div>
+							<button id='clear-zip-button' class='input margin-bottom' onclick='clearZipImages();' style='display: none;'>Clear ZIP Images</button>
+						</div>
+						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Select frame style for automatic framing</h5>
 							<select id="deck-autoframe" class="input margin-bottom">
 								<option value="false">Disabled</option>
@@ -754,6 +764,7 @@
 								<option value="Circuit">Circuit</option>
 								<option value="M15Eighth">M15-Eighth</option>
 								<option value="M15EighthUB">M15-Eighth Universes Beyond</option>
+								<option value="BloomburrowBorderlessColored">Bloomburrow Borderless (Colored)</option>
 							</select>
 							<label class='checkbox-container input margin-bottom'>Import flavor text
 								<input id='importFlavorTextDeck' type='checkbox' checked>
