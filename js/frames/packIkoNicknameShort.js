@@ -24,6 +24,7 @@ availableFrames = [
 	{name:'Green Crown', src:'/img/frames/m15/nickname/m15NicknameCrownG.png', masks:masks2, bounds:bounds2},
 	{name:'Multicolored Crown', src:'/img/frames/m15/nickname/m15NicknameCrownM.png', masks:masks2, bounds:bounds2},
 	{name:'Artifact Crown', src:'/img/frames/m15/nickname/m15NicknameCrownA.png', masks:masks2, bounds:bounds2},
+	{name:'Artifact (Alt) Crown', src:'/img/frames/m15/nickname/m15NicknameCrownAAlt.png', masks:masks2, bounds:bounds2},
 	{name:'Land Crown', src:'/img/frames/m15/nickname/m15NicknameCrownL.png', masks:masks2, bounds:bounds2},
 	{name:'White Title', src:'/img/frames/m15/nickname/m15NicknameTitleW.png', masks:masks3, bounds:bounds3},
 	{name:'Blue Title', src:'/img/frames/m15/nickname/m15NicknameTitleU.png', masks:masks3, bounds:bounds3},
@@ -32,6 +33,7 @@ availableFrames = [
 	{name:'Green Title', src:'/img/frames/m15/nickname/m15NicknameTitleG.png', masks:masks3, bounds:bounds3},
 	{name:'Multicolored Title', src:'/img/frames/m15/nickname/m15NicknameTitleM.png', masks:masks3, bounds:bounds3},
 	{name:'Artifact Title', src:'/img/frames/m15/nickname/m15NicknameTitleA.png', masks:masks3, bounds:bounds3},
+	{name:'Artifact (Alt) Title', src:'/img/frames/m15/nickname/m15NicknameTitleAAlt.png', masks:masks3, bounds:bounds3},
 	{name:'Land Title', src:'/img/frames/m15/nickname/m15NicknameTitleL.png', masks:masks3, bounds:bounds3},
 
 	{name:'White Power/Toughness', src:'/img/frames/m15/nickname/m15NicknamePTW.png', bounds:bounds},

@@ -10,6 +10,7 @@ availableFrames = [
 	{name:'Green Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleG.png', masks:masks3, bounds:bounds3},
 	{name:'Multicolored Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleM.png', masks:masks3, bounds:bounds3},
 	{name:'Artifact Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleA.png', masks:masks3, bounds:bounds3},
+	{name:'Artifact (Alt) Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleAAlt.png', masks:masks3, bounds:bounds3},
 	{name:'Land Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleL.png', masks:masks3, bounds:bounds3},
 	{name:'Colorless Nickname', src:'/img/frames/m15/nickname/addons/m15NicknameTitleC.png', masks:masks3, bounds:bounds3}
 	];
