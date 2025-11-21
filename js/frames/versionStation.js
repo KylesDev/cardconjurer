@@ -231,18 +231,18 @@ function setupStationUI() {
 		<h5 class='padding margin-bottom input-description'>Station Square Settings:</h5>
 
 		<div class='padding input-grid margin-bottom'>
-			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square Width:</h5><input id='station-square-width' type='number' class='input' oninput='stationEdited();' min='0' placeholder='Square Width'></div>
-			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square X Offset:</h5><input id='station-square-x' type='number' class='input' oninput='stationEdited();' placeholder='Square X Offset'></div>
-			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square Y Offset:</h5><input id='station-square-y' type='number' class='input' oninput='stationEdited();' placeholder='Square Y Offset'></div>
+			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square Width (Both Squares):</h5><input id='station-square-width' type='number' class='input' oninput='stationEdited();' min='0' placeholder='Square Width'></div>
+			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square X Offset (Both Squares):</h5><input id='station-square-x' type='number' class='input' oninput='stationEdited();' placeholder='Square X Offset'></div>
+			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Square Y Offset (Starting point of first square):</h5><input id='station-square-y' type='number' class='input' oninput='stationEdited();' placeholder='Square Y Offset'></div>
 		</div>
 
 		<div class='padding input-grid margin-bottom'>
 			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>First Square Height:</h5><input id='station-square-height-1' type='number' class='input' oninput='stationEdited();' min='0' placeholder='First Square Height'></div>
-			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Second Square Height:</h5><input id='station-square-height-2' type='number' class='input' oninput='stationEdited();' min='0' placeholder='Second Square Height (Set to bottom of text box automatically from first square)'></div>
+			<div><h5 class='padding margin-bottom input-description' style='font-style: normal;'>Second Square Height (Set to bottom of text box automatically from bottom of first square):</h5><input id='station-square-height-2' type='number' class='input' oninput='stationEdited();' min='0' placeholder='Second Square Height'></div>
 		</div>
 
 		<div class='padding input-grid'>
-			<label class='checkbox-container input'>Disable First Square Color (First square gets no color. Second square gets first square's opacity settings. Sets x and width of Ability 2 text box.)
+			<label class='checkbox-container input'>Disable First Square Color (First square becomes transparent. Second square gets first squares base opacity for each color on auto. Set to a color mode to get independent opacity)
 				<input id='station-disable-first-ability' type='checkbox' onchange='stationEdited();'>
 				<span class='checkmark'></span>
 			</label>

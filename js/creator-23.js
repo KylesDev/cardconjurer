@@ -236,11 +236,11 @@ function toggleCreatorTabs(event, target) {
 	Array.from(document.querySelector('#creator-menu-sections').children).forEach(element => element.classList.add('hidden'));
 	document.querySelector('#creator-menu-' + target).classList.remove('hidden');
 	selectSelectable(event);
-	
+
 	// Hide autoframe and download sections when Import Deck tab is selected
 	const autoframeSection = document.querySelector('#autoframe-section');
 	const downloadSection = document.querySelector('#download-section');
-	
+
 	if (target === 'importDeck') {
 		if (autoframeSection) autoframeSection.style.display = 'none';
 		if (downloadSection) downloadSection.style.display = 'none';
@@ -341,6 +341,7 @@ loadManaSymbols(['wu', 'wb', 'ub', 'ur', 'br', 'bg', 'rg', 'rw', 'gw', 'gu', '2w
 				 'wup', 'wbp', 'ubp', 'urp', 'brp', 'bgp', 'rgp', 'rwp', 'gwp', 'gup', 'purplew', 'purpleu', 'purpleb', 'purpler', 'purpleg',
 				 '2purple', 'purplep', 'cw', 'cu', 'cb', 'cr', 'cg'], [1.2, 1.2]);
 loadManaSymbols(['bar.png', 'whitebar.png']);
+loadManaSymbols(['brush', 'whitebrush'], [2.85, 2.85]);
 loadManaSymbols(['xxbgw', 'xxbrg', 'xxgub', 'xxgwu', 'xxrgw', 'xxrwu', 'xxubr', 'xxurg', 'xxwbr', 'xxwub'], [1.2, 1.2]);
 loadManaSymbols(true, ['chaos'], [1.2, 1]);
 loadManaSymbols(true, ['tk'], [0.8, 1]);
@@ -884,7 +885,7 @@ function autoFrame() {
 		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, true);
 	} else if (frame == '8th') {
 		group = 'Misc-2';
-		auto8thEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, false);
+		auto8thEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
 	} else if (frame == 'Borderless') {
 		group = 'Showcase-5';
 		autoBorderlessFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
@@ -1405,7 +1406,7 @@ async function autoBorderlessUBFrame(colors, mana_cost, type_line, power) {
 	await card.frames.forEach(item => addFrame([], item));
 	card.frames.reverse();
 }
-async function auto8thEditionFrame(colors, mana_cost, type_line, power, colorshifted = false) {
+async function auto8thEditionFrame(colors, mana_cost, type_line, power) {
 	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
 
 	//clear the draggable frames
@@ -1413,26 +1414,30 @@ async function auto8thEditionFrame(colors, mana_cost, type_line, power, colorshi
 	document.querySelector('#frame-list').innerHTML = null;
 
 	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
 
 	// Set frames
 	if (properties.pt) {
-		frames.push(make8thEditionFrameByLetter(properties.pt, 'PT', false, colorshifted));
+		frames.push(make8thEditionFrameByLetter(properties.pt, 'PT', false, style));
 	}
 	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.pinlineRight, 'Pinline', true, colorshifted));
+		frames.push(make8thEditionFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
 	}
-	frames.push(make8thEditionFrameByLetter(properties.pinline, 'Pinline', false, colorshifted));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Type', false, colorshifted));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Title', false, colorshifted));
+	frames.push(make8thEditionFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Title', false, style));
 	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.rulesRight, 'Rules', true, colorshifted));
+		frames.push(make8thEditionFrameByLetter(properties.rulesRight, 'Rules', true, style));
 	}
-	frames.push(make8thEditionFrameByLetter(properties.rules, 'Rules', false, colorshifted));
+	frames.push(make8thEditionFrameByLetter(properties.rules, 'Rules', false, style));
 	if (properties.frameRight) {
-		frames.push(make8thEditionFrameByLetter(properties.frameRight, 'Frame', true, colorshifted));
+		frames.push(make8thEditionFrameByLetter(properties.frameRight, 'Frame', true, style));
 	}
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Frame', false, colorshifted));
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Border', false, colorshifted));
+	frames.push(make8thEditionFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.frame, 'Border', false, style));
 
 	card.frames = frames;
 	card.frames.reverse();
@@ -2390,18 +2395,15 @@ function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = fal
 			'name': frameName + ' Power/Toughness',
 			'src': '/img/frames/8th/pt/' + letter.toLowerCase() + '.png',
 			'masks': [],
-			'bounds': {
-				'height': 0.0839,
-				'width': 0.2147,
-				'x': 0.7227,
-				'y': 0.8796
-			}
+			'bounds': {x:1461/2010, y:2481/2814, width:414/2010, height:218/2814}
 		}
 	}
 
+	var stylePath = style == 'Nyx' ? '/nyx/' : '';
+
 	var frame = {
 		'name': frameName + ' Frame',
-		'src': '/img/frames/8th/' + letter.toLowerCase() + '.png',
+		'src': '/img/frames/8th/' + stylePath + letter.toLowerCase() + '.png',
 	}
 
 	if (letter.includes('L') && letter.length > 1) {
@@ -2415,10 +2417,6 @@ function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = fal
 				'name': mask
 			}
 		]
-
-		if (mask == 'Border') {
-			frame.masks[0].src = frame.masks[0].src.replace('.png', '.svg');
-		}
 
 		if (maskToRightHalf) {
 			frame.masks.push({
@@ -3306,6 +3304,12 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 		if ('complementary' in frameToAdd && frameToAdd.masks.length == 0) {
 			if (typeof frameToAdd.complementary == 'number') {
 				frameToAdd.complementary = [frameToAdd.complementary];
+			} else if (typeof frameToAdd.complementary == 'string') {
+				availableFrames.forEach((availableFrame, index, availableFrames) => {
+				  if (availableFrame.name == frameToAdd.complementary) {
+				  	frameToAdd.complementary = [index];
+				  }
+				})
 			}
 			const realFrameIndex = selectedFrameIndex;
 			for (const index of frameToAdd.complementary) {
@@ -3785,12 +3789,72 @@ function writeText(textObject, targetContext) {
 		var textColor = textObject.color || 'black';
 		if (textObject.conditionalColor != undefined) {
 			var codeParams = textObject.conditionalColor.split(":");
-			for (var eligibleFrame of codeParams[0].split(",")) {
-				eligibleFrame = eligibleFrame.replace(/_/g, " ").toLowerCase();
-				if (card.frames.findIndex(element => element.name.toLowerCase().includes(eligibleFrame)) != -1) {
-					textColor = codeParams[1];
-				}
-			}
+			const tagParts = codeParams[0].split(",");
+		    const colorToApply = codeParams[1];
+
+		    for (let part of tagParts) {
+
+		        // Split into frame name + mask rules
+		        const [rawFrameName, ...maskRuleParts] = part.split("*");
+		        const frameName = rawFrameName.replace(/_/g, " ").toLowerCase();
+
+		        const positiveMasks = [];
+		        const negativeMasks = [];
+
+		        for (let rule of maskRuleParts) {
+		            if (!rule) continue;
+		            if (rule.startsWith("!")) {
+		                negativeMasks.push(rule.substring(1).replace(/_/g, " ").toLowerCase());
+		            } else {
+		                positiveMasks.push(rule.replace(/_/g, " ").toLowerCase());
+		            }
+		        }
+
+		        const matchingFrames = card.frames.filter(f =>
+		            f.name.toLowerCase().includes(frameName)
+		        );
+
+		        for (const frame of matchingFrames) {
+		            const masks = frame.masks || [];
+
+		            // --------------------------------------
+		            // SPECIAL RULE:
+		            // If NO masks → always match immediately
+		            // --------------------------------------
+		            if (masks.length === 0) {
+		                textColor = colorToApply;
+		                lineContext.fillStyle = textColor;
+		                continue;
+		            }
+
+		            const maskNames = masks.map(m => m.name.toLowerCase());
+
+		            // --- Positive mask rules -------------------------
+		            let passesPositive = true;
+
+		            if (positiveMasks.length > 0) {
+		                passesPositive = positiveMasks.every(pos =>
+		                    maskNames.some(mask => mask.includes(pos))
+		                );
+		            }
+
+		            if (!passesPositive) continue;
+
+		            // --- Negative mask rules -------------------------
+		            let passesNegative = true;
+
+		            if (negativeMasks.length > 0) {
+		                passesNegative = negativeMasks.every(neg =>
+		                    !maskNames.some(mask => mask.includes(neg))
+		                );
+		            }
+
+		            if (!passesNegative) continue;
+
+		            // All conditions passed
+		            textColor = colorToApply;
+		        }
+		    }
 		}
 		var textFont = textObject.font || 'mplantin';
 		var textAlign = textObject.align || 'left';
@@ -3935,14 +3999,74 @@ function writeText(textObject, targetContext) {
 				} else if (possibleCode == 'justify-right') {
 					textJustify = 'right';
 				} else if (possibleCode.includes('conditionalcolor')) {
-					var codeParams = possibleCode.split(":");
-					for (var eligibleFrame of codeParams[1].split(",")) {
-						eligibleFrame = eligibleFrame.replace(/_/g, " ");
-						if (card.frames.findIndex(element => element.name.toLowerCase().includes(eligibleFrame)) != -1) {
-							textColor = codeParams[2];
-							lineContext.fillStyle = textColor;
-						}
-					}
+				    const codeParams = possibleCode.split(":");
+				    const tagParts = codeParams[1].split(",");
+				    const colorToApply = codeParams[2];
+
+				    for (let part of tagParts) {
+
+				        // Split into frame name + mask rules
+				        const [rawFrameName, ...maskRuleParts] = part.split("*");
+				        const frameName = rawFrameName.replace(/_/g, " ").toLowerCase();
+
+				        const positiveMasks = [];
+				        const negativeMasks = [];
+
+				        for (let rule of maskRuleParts) {
+				            if (!rule) continue;
+				            if (rule.startsWith("!")) {
+				                negativeMasks.push(rule.substring(1).replace(/_/g, " ").toLowerCase());
+				            } else {
+				                positiveMasks.push(rule.replace(/_/g, " ").toLowerCase());
+				            }
+				        }
+
+				        const matchingFrames = card.frames.filter(f =>
+				            f.name.toLowerCase().includes(frameName)
+				        );
+
+				        for (const frame of matchingFrames) {
+				            const masks = frame.masks || [];
+
+				            // --------------------------------------
+				            // SPECIAL RULE:
+				            // If NO masks → always match immediately
+				            // --------------------------------------
+				            if (masks.length === 0) {
+				                textColor = colorToApply;
+				                lineContext.fillStyle = textColor;
+				                continue;
+				            }
+
+				            const maskNames = masks.map(m => m.name.toLowerCase());
+
+				            // --- Positive mask rules -------------------------
+				            let passesPositive = true;
+
+				            if (positiveMasks.length > 0) {
+				                passesPositive = positiveMasks.every(pos =>
+				                    maskNames.some(mask => mask.includes(pos))
+				                );
+				            }
+
+				            if (!passesPositive) continue;
+
+				            // --- Negative mask rules -------------------------
+				            let passesNegative = true;
+
+				            if (negativeMasks.length > 0) {
+				                passesNegative = negativeMasks.every(neg =>
+				                    !maskNames.some(mask => mask.includes(neg))
+				                );
+				            }
+
+				            if (!passesNegative) continue;
+
+				            // All conditions passed
+				            textColor = colorToApply;
+				            lineContext.fillStyle = textColor;
+				        }
+				    }
 				} else if (possibleCode.includes('fontcolor')) {
 					textColor = possibleCode.replace('fontcolor', '');
 					lineContext.fillStyle = textColor;
@@ -4078,6 +4202,9 @@ function writeText(textObject, targetContext) {
 						(getManaSymbol(textObject.manaPrefix + possibleCode) != undefined || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join('')) != undefined)) {
 						manaSymbol = getManaSymbol(textObject.manaPrefix + possibleCode) || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join(''));
 					} else {
+						if (possibleCode == 'brush' && textColor == 'white') {
+							possibleCode = 'whitebrush';
+						}
 						manaSymbol = getManaSymbol(possibleCode) || getManaSymbol(possibleCode.split('').reverse().join(''));
 					}
 
@@ -4840,7 +4967,7 @@ function fetchSetSymbol() {
         uploadSetSymbol(hexproofUrl, 'resetSetSymbol');
 	} else {
 		var extension = 'svg';
-		if (['moc', 'ltr', 'ltc', 'cmm', 'who', 'scd', 'woe', 'wot', 'woc', 'lci', 'lcc', 'mkm', 'mkc', 'otj', 'otc', 'dft', 'drc', 'tdm', 'tdc', 'fin', 'fic', 'pio', 'om1'].includes(setCode.toLowerCase())) {
+		if (['xxxx'].includes(setCode.toLowerCase())) {
 			extension = 'png';
 		}
 		if (setSymbolAliases.has(setCode.toLowerCase())) setCode = setSymbolAliases.get(setCode.toLowerCase());
@@ -5674,6 +5801,34 @@ function parseVanguardLayout(card) {
     };
 }
 
+function parseRollAbilities(text) {
+    // Check if this is a roll card
+    if (!text.toLowerCase().includes('roll a d20')) {
+        return null;
+    }
+
+    let modifiedText = text;
+    const lines = text.split('\n');
+
+    // Skip the first line ("Roll a d20.")
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // Match patterns like "1—9 | ability" or "20 | ability"
+        const rollMatch = line.match(/^(\d+(?:—\d+)?)\s*\|\s*(.+)$/);
+        if (rollMatch) {
+            const range = rollMatch[1];
+            const ability = rollMatch[2];
+
+            // Replace the line with the roll tag format
+            const newLine = `{roll${range}} ${ability}`;
+            modifiedText = modifiedText.replace(line, newLine);
+        }
+    }
+
+    return modifiedText;
+}
+
 function parseStationCard(oracleText) {
     if (!oracleText || !oracleText.includes('STATION')) {
         return null;
@@ -6118,10 +6273,38 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('STATION'
 	if (card.text.type) {card.text.type.text = langFontCode + cardToImport.type_line || '';}
 
 	var italicExemptions = ['Boast', 'Cycling', 'Visit', 'Prize', 'I', 'II', 'III', 'IV', 'I, II', 'II, III', 'III, IV', 'I, II, III', 'II, III, IV', 'I, II, III, IV', '• Khans', '• Dragons', '• Mirran', '• Phyrexian', 'Prototype', 'Companion', 'To solve', 'Solved'];
-	var rulesText = (cardToImport.oracle_text || '').replace(/(?:\((?:.*?)\)|[^"\n]+(?= — ))/g, function(a){
-	    if (italicExemptions.includes(a) || (cardToImport.keywords && cardToImport.keywords.indexOf('Spree') != -1 && a.startsWith('+'))) {return a;}
-	    return '{i}' + a + '{/i}';
-	});
+	var italicExemptions = ['Boast', 'Cycling', 'Visit', 'Prize', 'I', 'II', 'III', 'IV', 'I, II', 'II, III', 'III, IV', 'I, II, III', 'II, III, IV', 'I, II, III, IV', '• Khans', '• Dragons', '• Mirran', '• Phyrexian', 'Prototype', 'Companion', 'To solve', 'Solved'];
+	if (cardToImport.oracle_text) {
+		const hasRoll = cardToImport.oracle_text.toLowerCase().includes('roll a d20');
+		const hasNumberedAbilities = /\d+(?:—\d+)?\s*\|\s*.+/.test(cardToImport.oracle_text);
+		const rollText = parseRollAbilities(cardToImport.oracle_text);
+		if (rollText) {
+			// Use the modified text with roll tags for further processing
+			var rulesText = rollText.replace(/(?:\((?:.*?)\)|[^"\n]+(?= — ))/g, function(a){
+				if (italicExemptions.includes(a) || (cardToImport.keywords && cardToImport.keywords.indexOf('Spree') != -1 && a.startsWith('+'))) {return a;}
+				return '{i}' + a + '{/i}';
+			});
+		} else {
+			// Regular processing for non-roll cards
+			var rulesText = (cardToImport.oracle_text || '').replace(/(?:\((?:.*?)\)|[^"\n]+(?= — ))/g, function(a){
+				if (italicExemptions.includes(a) || (cardToImport.keywords && cardToImport.keywords.indexOf('Spree') != -1 && a.startsWith('+'))) {return a;}
+				return '{i}' + a + '{/i}';
+			});
+		}
+		// Handle loyalty ability brackets - separate from roll handling, applies to ALL cards
+		const isCleaveSpell = rulesText.toLowerCase().includes('cleave') ||
+							 (cardToImport.keywords && cardToImport.keywords.includes('Cleave'));
+
+		if (!isCleaveSpell) {
+		// Replace loyalty ability brackets [+1], [-2], etc. with curly brackets
+		// Also convert em dash (−) to regular hyphen (-)
+		rulesText = rulesText.replace(/\[([+\-−]\d+)\]/g, function(match, number) {
+			return '{' + number.replace('\u2212', '-') + '}';
+		});
+	}
+	} else {
+		var rulesText = '';
+	}
 	rulesText = curlyQuotes(rulesText).replace(/{Q}/g, '{untap}').replace(/{\u221E}/g, "{inf}").replace(/• /g, '• {indent}');
 	rulesText = rulesText.replace('(If this card is your chosen companion, you may put it into your hand from outside the game for {3} any time you could cast a sorcery.)', '(If this card is your chosen companion, you may put it into your hand from outside the game for {3} as a sorcery.)')
 
@@ -6215,6 +6398,12 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('STATION'
 	if (card.version.includes('planeswalker')) {
 		card.text.loyalty.text = cardToImport.loyalty || '';
 		var planeswalkerAbilities = cardToImport.oracle_text.split('\n');
+		// Replace loyalty ability brackets [+1], [-2], etc. with curly brackets for each ability
+		planeswalkerAbilities = planeswalkerAbilities.map(ability => {
+			return ability.replace(/\[([+\-−]\d+)\]/g, function(match, number) {
+				return '{' + number.replace('\u2212', '-') + '}';
+			});
+		});
 		while (planeswalkerAbilities.length > 4) {
 			var newAbility = planeswalkerAbilities[planeswalkerAbilities.length - 2] + '\n' + planeswalkerAbilities.pop();
 			planeswalkerAbilities[planeswalkerAbilities.length - 1] = newAbility;
@@ -6924,17 +7113,17 @@ const ART_LOAD_POLL_INTERVAL_MS = 250; // Interval for polling art load status
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
 	const cards = [];
-	
+
 	for (const line of lines) {
 		const trimmedLine = line.trim();
 		if (!trimmedLine) continue;
-		
+
 		// Parse format: {numberOfCopies} {cardName}
 		const match = trimmedLine.match(/^(\d+)\s+(.+)$/);
 		if (match) {
 			const copies = parseInt(match[1], 10);
 			const cardName = match[2].trim();
-			
+
 			// Validate number of copies
 			if (copies >= 1 && copies <= 100) {
 				cards.push({ name: cardName, copies: copies });
@@ -6945,7 +7134,7 @@ function parseDeckList(deckListText) {
 			console.warn(`Invalid deck list format for line: ${line}`);
 		}
 	}
-	
+
 	return cards;
 }
 
@@ -6954,94 +7143,94 @@ async function generateDeck() {
 		notify('Deck generation already in progress!', 3);
 		return;
 	}
-	
+
 	// Check if we have a single image uploaded
 	if (singleImageUpload) {
 		return generateSingleCard();
 	}
-	
+
 	// Check if we have ZIP images uploaded
 	if (Object.keys(zipCardImages).length > 0) {
 		return generateDeckFromZip();
 	}
-	
+
 	// Otherwise, use the text decklist
 	const deckListInput = document.querySelector('#deck-list-input');
 	const deckListText = deckListInput.value;
-	
+
 	if (!deckListText.trim()) {
 		notify('Please enter a deck list or upload an image file!', 3);
 		return;
 	}
-	
+
 	const cards = parseDeckList(deckListText);
-	
+
 	if (cards.length === 0) {
 		notify('No valid cards found in the deck list. Please check the format.', 5);
 		return;
 	}
-	
+
 	// Calculate total cards to generate
 	const totalCards = cards.reduce((sum, card) => sum + card.copies, 0);
-	
+
 	// Ask user for confirmation
 	const confirmed = confirm(
 		`This will generate ${totalCards} card image(s) from ${cards.length} unique card(s).\n\n` +
 		`The browser will download a ZIP file containing all cards.\n\n` +
 		`Continue?`
 	);
-	
+
 	if (!confirmed) {
 		return;
 	}
-	
+
 	// Initialize state
 	deckGenerationState.isGenerating = true;
 	deckGenerationState.currentIndex = 0;
 	deckGenerationState.cards = cards;
 	deckGenerationState.cancelled = false;
 	deckGenerationState.zip = new JSZip();
-	
+
 	// Get frame style selection
 	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
-	
+
 	// Save current autoframe setting to restore later
 	const previousAutoFrame = document.querySelector('#autoFrame').value;
-	
+
 	// Set the autoframe for deck generation
 	if (selectedFrameStyle !== 'false') {
 		document.querySelector('#autoFrame').value = selectedFrameStyle;
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
-	
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
 	const progressBar = document.querySelector('#deck-progress-bar');
 	const generateButton = document.querySelector('#generate-deck-button');
-	
+
 	progressDiv.style.display = 'block';
 	generateButton.disabled = true;
 	progressBar.max = totalCards;
 	progressBar.value = 0;
-	
+
 	try {
 		let cardIndex = 0;
-		
+
 		for (const cardEntry of cards) {
 			if (deckGenerationState.cancelled) break;
-			
+
 			progressText.textContent = `Importing: ${cardEntry.name}...`;
-			
+
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
-				
+
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
-				
+
 				// Wait for art and frames to be fully loaded
 				await waitForCardReady();
-				
+
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
@@ -7049,28 +7238,28 @@ async function generateDeck() {
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
-				
+
 				// Ensure canvas is fully drawn
 				progressText.textContent = `Rendering: ${cardEntry.name}...`;
 				if (typeof drawCard === 'function') {
 					drawCard();
 				}
-				
+
 				// Wait for canvas to finish rendering
 				await new Promise(resolve => setTimeout(resolve, 800));
-				
+
 				// Get the card image data
 				const imageData = cardCanvas.toDataURL('image/png');
 				const imageBlob = await (await fetch(imageData)).blob();
-			
+
 			// Add to ZIP multiple times based on copies
 			for (let copy = 1; copy <= cardEntry.copies; copy++) {
 				if (deckGenerationState.cancelled) break;
-				
+
 				cardIndex++;
 				progressBar.value = cardIndex;
 				progressText.textContent = `Adding: ${cardEntry.name} (${copy}/${cardEntry.copies})`;
-				
+
 				// Create filename with copy number if multiple copies
 				let filename;
 				if (cardEntry.copies > 1) {
@@ -7078,7 +7267,7 @@ async function generateDeck() {
 				} else {
 					filename = `${sanitizeFilename(cardEntry.name)}.png`;
 				}
-				
+
 				deckGenerationState.zip.file(filename, imageBlob);
 			}
 			} catch (cardError) {
@@ -7087,12 +7276,12 @@ async function generateDeck() {
 				// Continue with next card instead of failing completely
 			}
 		}
-		
+
 		if (!deckGenerationState.cancelled) {
 			// Generate and download ZIP
 			progressText.textContent = 'Creating ZIP file...';
 			const zipBlob = await deckGenerationState.zip.generateAsync({ type: 'blob' });
-			
+
 			// Download ZIP
 			const downloadElement = document.createElement('a');
 			downloadElement.href = URL.createObjectURL(zipBlob);
@@ -7100,7 +7289,7 @@ async function generateDeck() {
 			document.body.appendChild(downloadElement);
 			downloadElement.click();
 			downloadElement.remove();
-			
+
 			progressText.textContent = `Complete! Downloaded ${totalCards} card(s).`;
 			notify('Deck generation complete!', 3);
 		} else {
@@ -7115,11 +7304,11 @@ async function generateDeck() {
 		// Restore previous autoframe setting
 		document.querySelector('#autoFrame').value = previousAutoFrame;
 		localStorage.setItem('autoFrame', previousAutoFrame);
-		
+
 		// Reset state
 		deckGenerationState.isGenerating = false;
 		generateButton.disabled = false;
-		
+
 		// Hide progress after a delay
 		setTimeout(() => {
 			progressDiv.style.display = 'none';
@@ -7132,76 +7321,76 @@ async function generateSingleCard() {
 		notify('Card generation already in progress!', 3);
 		return;
 	}
-	
+
 	if (!singleImageUpload) {
 		notify('No image uploaded!', 3);
 		return;
 	}
-	
+
 	const cardName = singleImageUpload.cardName;
-	
+
 	// Ask user for confirmation
 	const confirmed = confirm(
 		`This will generate a card for: ${cardName}\n\n` +
 		`The card will be downloaded as a single image file.\n\n` +
 		`Continue?`
 	);
-	
+
 	if (!confirmed) {
 		return;
 	}
-	
+
 	// Initialize state
 	deckGenerationState.isGenerating = true;
 	deckGenerationState.cancelled = false;
-	
+
 	// Get frame style selection
 	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
-	
+
 	// Save current autoframe setting to restore later
 	const previousAutoFrame = document.querySelector('#autoFrame').value;
-	
+
 	// Set the autoframe for card generation
 	if (selectedFrameStyle !== 'false') {
 		document.querySelector('#autoFrame').value = selectedFrameStyle;
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
-	
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
 	const progressBar = document.querySelector('#deck-progress-bar');
 	const generateButton = document.querySelector('#generate-deck-button');
-	
+
 	progressDiv.style.display = 'block';
 	generateButton.disabled = true;
 	progressBar.max = 100;
 	progressBar.value = 0;
-	
+
 	try {
 		progressText.textContent = `Importing: ${cardName}...`;
 		progressBar.value = 20;
-		
+
 		// Import the card from Scryfall
 		await importCardForDeck(cardName);
-		
+
 		progressText.textContent = `Loading: ${cardName}...`;
 		progressBar.value = 40;
-		
+
 		// Replace the art with the provided image and auto-fit it
 		uploadArt(singleImageUpload.imageUrl, 'autoFit');
-		
+
 		// Wait for art to be fully loaded
 		await new Promise((resolve) => {
 			let checkInterval = null;
-			
+
 			const cleanup = () => {
 				if (checkInterval) {
 					clearInterval(checkInterval);
 					checkInterval = null;
 				}
 			};
-			
+
 			if (art.complete && art.src === singleImageUpload.imageUrl) {
 				resolve();
 			} else {
@@ -7212,7 +7401,7 @@ async function generateSingleCard() {
 						resolve();
 					}
 				}, ART_LOAD_POLL_INTERVAL_MS);
-				
+
 				// Timeout fallback
 				setTimeout(() => {
 					cleanup();
@@ -7220,43 +7409,43 @@ async function generateSingleCard() {
 				}, ART_LOAD_TIMEOUT_MS);
 			}
 		});
-		
+
 		// Wait for card and frames to be fully loaded
 		await waitForCardReady();
-		
+
 		progressText.textContent = `Framing: ${cardName}...`;
 		progressBar.value = 60;
-		
+
 		// Trigger autoframe if enabled
 		if (selectedFrameStyle !== 'false') {
 			autoFrame();
 			// Wait for autoframe to complete - use longer timeout for complex frames
 			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
 		}
-		
+
 		// Ensure canvas is fully drawn
 		progressText.textContent = `Rendering: ${cardName}...`;
 		progressBar.value = 80;
-		
+
 		if (typeof drawCard === 'function') {
 			drawCard();
 		}
-		
+
 		// Wait for canvas to finish rendering - increased timeout for complex cards
 		await new Promise(resolve => setTimeout(resolve, CANVAS_RENDER_TIMEOUT_MS));
-		
+
 		progressBar.value = 90;
-		
+
 		// Download the single card image
 		progressText.textContent = `Downloading: ${cardName}...`;
-		
+
 		// Use the existing downloadCard function
 		downloadCard();
-		
+
 		progressBar.value = 100;
 		progressText.textContent = `Complete! Card downloaded.`;
 		notify('Card generation complete!', 3);
-		
+
 	} catch (error) {
 		console.error('Error generating card:', error);
 		notify('Error generating card: ' + error.message, 5);
@@ -7265,11 +7454,11 @@ async function generateSingleCard() {
 		// Restore previous autoframe setting
 		document.querySelector('#autoFrame').value = previousAutoFrame;
 		localStorage.setItem('autoFrame', previousAutoFrame);
-		
+
 		// Reset state
 		deckGenerationState.isGenerating = false;
 		generateButton.disabled = false;
-		
+
 		// Hide progress after a delay
 		setTimeout(() => {
 			progressDiv.style.display = 'none';
@@ -7297,12 +7486,12 @@ function fetchScryfallCardByExactName(cardName) {
 				}
 			}
 		};
-		
+
 		// Use the exact name endpoint for precise matching
 		// URL encode the card name properly
 		const encodedName = encodeURIComponent(cardName);
 		const url = `https://api.scryfall.com/cards/named?exact=${encodedName}`;
-		
+
 		xhttp.open('GET', url, true);
 		try {
 			xhttp.send();
@@ -7321,14 +7510,14 @@ function importCardForDeck(cardName) {
 				reject(new Error(`Timeout importing card: ${cardName}`));
 			}
 		}, 15000); // 15 second timeout for import
-		
+
 		// Set the flavor text checkbox state from the deck import checkbox
 		const deckFlavorTextCheckbox = document.querySelector('#importFlavorTextDeck');
 		const importFlavorTextCheckbox = document.querySelector('#importFlavorText');
 		if (deckFlavorTextCheckbox && importFlavorTextCheckbox) {
 			importFlavorTextCheckbox.checked = deckFlavorTextCheckbox.checked;
 		}
-		
+
 		// Hook into the importCard callback
 		const originalImportCard = window.importCard;
 		window.importCard = function(cardObject) {
@@ -7336,10 +7525,10 @@ function importCardForDeck(cardName) {
 			if (originalImportCard && typeof originalImportCard === 'function') {
 				originalImportCard(cardObject);
 			}
-			
+
 			// Restore original
 			window.importCard = originalImportCard;
-			
+
 			// Wait a bit for the UI to update and changeCardIndex to be called
 			setTimeout(() => {
 				if (!importResolved) {
@@ -7349,7 +7538,7 @@ function importCardForDeck(cardName) {
 				}
 			}, 500);
 		};
-		
+
 		// Use exact name search for deck imports
 		fetchScryfallCardByExactName(cardName)
 			.then(cardData => {
@@ -7357,7 +7546,7 @@ function importCardForDeck(cardName) {
 				scryfallCard = cardData;
 				const importIndex = document.querySelector('#import-index');
 				importIndex.innerHTML = '';
-				
+
 				const card = cardData[0];
 				if (card && card.type_line && card.type_line !== 'Card') {
 					const option = document.createElement('option');
@@ -7365,13 +7554,13 @@ function importCardForDeck(cardName) {
 					option.value = 0;
 					importIndex.appendChild(option);
 				}
-				
+
 				// Also set up the art data with the exact matched card
 				// This prevents the art from being fetched from a different card
 				scryfallArt = [];
 				const artIndex = document.querySelector('#art-index');
 				artIndex.innerHTML = '';
-				
+
 				if (card && card.image_uris && card.artist) {
 					scryfallArt.push(card);
 					const artOption = document.createElement('option');
@@ -7379,10 +7568,10 @@ function importCardForDeck(cardName) {
 					artOption.value = 0;
 					artIndex.appendChild(artOption);
 				}
-				
+
 				// Set flag to skip art fetching since we already have the exact art
 				skipArtFetch = true;
-				
+
 				// Trigger the card import
 				if (window.importCard) {
 					window.importCard(cardData);
@@ -7404,14 +7593,14 @@ function waitForCardReady() {
 		let checksRemaining = 100; // 10 seconds max
 		let lastArtSrc = null;
 		let artStableCount = 0;
-		
+
 		const checkInterval = setInterval(() => {
 			checksRemaining--;
-			
+
 			// Check if art has loaded and is stable
 			const artLoaded = art && art.src && !art.src.includes('/img/blank.png');
 			const artComplete = art && art.complete;
-			
+
 			// Track if art source is stable (not changing)
 			if (art && art.src === lastArtSrc) {
 				artStableCount++;
@@ -7419,16 +7608,16 @@ function waitForCardReady() {
 				artStableCount = 0;
 				lastArtSrc = art ? art.src : null;
 			}
-			
+
 			// Check if frames have been added
 			const framesAdded = card.frames && card.frames.length > 0;
-			
+
 			// Card is ready when:
 			// 1. Art is loaded and complete
 			// 2. Art source has been stable for at least 3 checks (300ms)
 			// 3. Frames have been added
 			const isReady = artLoaded && artComplete && artStableCount >= 3 && framesAdded;
-			
+
 			if (isReady || checksRemaining <= 0) {
 				clearInterval(checkInterval);
 				resolve();
@@ -7450,48 +7639,48 @@ let singleImageUpload = null; // Global variable to store single image upload
 async function handleFileUpload(event) {
 	const file = event.target.files[0];
 	if (!file) return;
-	
+
 	const extension = file.name.split('.').pop().toLowerCase();
-	
+
 	// Check if it's a ZIP file
 	if (extension === 'zip') {
 		return handleZipUpload(event);
 	}
-	
+
 	// Check if it's a single image file
 	if (['jpg', 'jpeg', 'png'].includes(extension)) {
 		return handleSingleImageUpload(event);
 	}
-	
+
 	notify('Please upload a valid image file (PNG, JPG, JPEG) or ZIP file.', 3);
 }
 
 async function handleSingleImageUpload(event) {
 	const file = event.target.files[0];
 	if (!file) return;
-	
+
 	try {
 		// Clear any existing uploads
 		clearUploadedFiles();
-		
+
 		const cardName = parseImageFilename(file.name);
 		const imageUrl = URL.createObjectURL(file);
-		
+
 		// Store single image upload
 		singleImageUpload = {
 			cardName: cardName,
 			imageUrl: imageUrl,
 			fileName: file.name
 		};
-		
+
 		notify(`Loaded single image: ${cardName}`, 3);
-		
+
 		// Show the clear button
 		const clearButton = document.querySelector('#clear-zip-button');
 		if (clearButton) {
 			clearButton.style.display = 'block';
 		}
-		
+
 		// Clear the file input so the same file can be uploaded again if needed
 		event.target.value = '';
 	} catch (error) {
@@ -7503,52 +7692,52 @@ async function handleSingleImageUpload(event) {
 async function handleZipUpload(event) {
 	const file = event.target.files[0];
 	if (!file) return;
-	
+
 	try {
 		// Clear any existing uploads
 		clearUploadedFiles();
-		
+
 		const zip = await JSZip.loadAsync(file);
 		zipCardImages = {};
 		const imageFiles = [];
-		
+
 		// Extract all image files
 		zip.forEach((relativePath, zipEntry) => {
 			const fileName = relativePath.split('/').pop(); // Get filename without path
 			const extension = fileName.split('.').pop().toLowerCase();
-			
+
 			// Check if it's an image file
 			if (['jpg', 'jpeg', 'png'].includes(extension) && !fileName.startsWith('.')) {
 				imageFiles.push({ fileName, zipEntry });
 			}
 		});
-		
+
 		if (imageFiles.length === 0) {
 			notify('No valid image files found in ZIP. Please include JPG or PNG files.', 5);
 			return;
 		}
-		
+
 		// Process each image
 		for (const { fileName, zipEntry } of imageFiles) {
 			const cardName = parseImageFilename(fileName);
 			const blob = await zipEntry.async('blob');
 			const imageUrl = URL.createObjectURL(blob);
-			
+
 			// Store image URL by card name
 			if (!zipCardImages[cardName]) {
 				zipCardImages[cardName] = [];
 			}
 			zipCardImages[cardName].push(imageUrl);
 		}
-		
+
 		notify(`Loaded ${imageFiles.length} image(s) from ZIP for ${Object.keys(zipCardImages).length} unique card(s).`, 3);
-		
+
 		// Show the clear button
 		const clearButton = document.querySelector('#clear-zip-button');
 		if (clearButton) {
 			clearButton.style.display = 'block';
 		}
-		
+
 		// Clear the file input so the same file can be uploaded again if needed
 		event.target.value = '';
 	} catch (error) {
@@ -7563,7 +7752,7 @@ function clearUploadedFiles() {
 		URL.revokeObjectURL(singleImageUpload.imageUrl);
 		singleImageUpload = null;
 	}
-	
+
 	// Clear ZIP images
 	clearZipImages();
 }
@@ -7575,39 +7764,39 @@ function clearZipImages() {
 			URL.revokeObjectURL(url);
 		}
 	}
-	
+
 	zipCardImages = {};
 }
 
 function clearUploadedFilesUI() {
 	// Call the actual clear function
 	clearUploadedFiles();
-	
+
 	// Hide the clear button
 	const clearButton = document.querySelector('#clear-zip-button');
 	if (clearButton) {
 		clearButton.style.display = 'none';
 	}
-	
+
 	// Clear the file input
 	const zipInput = document.querySelector('#deck-zip-input');
 	if (zipInput) {
 		zipInput.value = '';
 	}
-	
+
 	notify('Uploaded files cleared.', 2);
 }
 
 function parseImageFilename(filename) {
 	// Remove file extension
 	let name = filename.substring(0, filename.lastIndexOf('.'));
-	
+
 	// Remove copy number suffix like _(2), _(3), etc.
 	name = name.replace(/_\(\d+\)$/, '');
-	
+
 	// Replace underscores with spaces
 	name = name.replace(/_/g, ' ');
-	
+
 	return name.trim();
 }
 
@@ -7616,20 +7805,20 @@ async function generateDeckFromZip() {
 		notify('Deck generation already in progress!', 3);
 		return;
 	}
-	
+
 	if (Object.keys(zipCardImages).length === 0) {
 		notify('Please upload a ZIP file first!', 3);
 		return;
 	}
-	
+
 	// Create card list from ZIP images
 	const cards = [];
-	
+
 	for (const [cardName, images] of Object.entries(zipCardImages)) {
 		// Each image represents one copy
 		for (let i = 0; i < images.length; i++) {
-			cards.push({ 
-				name: cardName, 
+			cards.push({
+				name: cardName,
 				copies: 1,
 				imageUrl: images[i],
 				copyNumber: i + 1,  // Track which copy this is (1-indexed)
@@ -7637,76 +7826,76 @@ async function generateDeckFromZip() {
 			});
 		}
 	}
-	
+
 	const totalCards = cards.length;
 	const uniqueCards = Object.keys(zipCardImages).length;
-	
+
 	// Ask user for confirmation
 	const confirmed = confirm(
 		`This will generate ${totalCards} card image(s) from ${uniqueCards} unique card(s).\n\n` +
 		`The browser will download a ZIP file containing all cards.\n\n` +
 		`Continue?`
 	);
-	
+
 	if (!confirmed) {
 		return;
 	}
-	
+
 	// Initialize state
 	deckGenerationState.isGenerating = true;
 	deckGenerationState.currentIndex = 0;
 	deckGenerationState.cards = cards;
 	deckGenerationState.cancelled = false;
 	deckGenerationState.zip = new JSZip();
-	
+
 	// Get frame style selection
 	const selectedFrameStyle = document.querySelector('#deck-autoframe').value;
-	
+
 	// Save current autoframe setting to restore later
 	const previousAutoFrame = document.querySelector('#autoFrame').value;
-	
+
 	// Set the autoframe for deck generation
 	if (selectedFrameStyle !== 'false') {
 		document.querySelector('#autoFrame').value = selectedFrameStyle;
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
-	
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
 	const progressBar = document.querySelector('#deck-progress-bar');
 	const generateButton = document.querySelector('#generate-deck-button');
-	
+
 	progressDiv.style.display = 'block';
 	generateButton.disabled = true;
 	progressBar.max = totalCards;
 	progressBar.value = 0;
-	
+
 	const failedCards = [];
 	const successCount = { value: 0 };
-	
+
 	try {
 		let cardIndex = 0;
-		
+
 		for (const cardEntry of cards) {
 			if (deckGenerationState.cancelled) break;
-			
+
 			progressText.textContent = `Importing: ${cardEntry.name}...`;
-			
+
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
-				
+
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
-				
+
 				// Replace the art with the provided image and auto-fit it
 				if (cardEntry.imageUrl) {
 					uploadArt(cardEntry.imageUrl, 'autoFit');
 				}
-				
+
 				// Wait for art and frames to be fully loaded
 				await waitForCardReady();
-				
+
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
@@ -7714,24 +7903,24 @@ async function generateDeckFromZip() {
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
-				
+
 				// Ensure canvas is fully drawn
 				progressText.textContent = `Rendering: ${cardEntry.name}...`;
 				if (typeof drawCard === 'function') {
 					drawCard();
 				}
-				
+
 				// Wait for canvas to finish rendering
 				await new Promise(resolve => setTimeout(resolve, 800));
-				
+
 				// Get the card image data
 				const imageData = cardCanvas.toDataURL('image/png');
 				const imageBlob = await (await fetch(imageData)).blob();
-				
+
 				cardIndex++;
 				progressBar.value = cardIndex;
 				progressText.textContent = `Adding: ${cardEntry.name}`;
-				
+
 				// Create filename with copy number if multiple copies
 				let filename;
 				if (cardEntry.totalCopies > 1) {
@@ -7741,7 +7930,7 @@ async function generateDeckFromZip() {
 				}
 				deckGenerationState.zip.file(filename, imageBlob);
 				successCount.value++;
-				
+
 			} catch (cardError) {
 				console.error(`Error processing card ${cardEntry.name}:`, cardError);
 				failedCards.push(cardEntry.name);
@@ -7750,12 +7939,12 @@ async function generateDeckFromZip() {
 				// Continue with next card instead of failing completely
 			}
 		}
-		
+
 		if (!deckGenerationState.cancelled) {
 			// Generate and download ZIP
 			progressText.textContent = 'Creating ZIP file...';
 			const zipBlob = await deckGenerationState.zip.generateAsync({ type: 'blob' });
-			
+
 			// Download ZIP
 			const downloadElement = document.createElement('a');
 			downloadElement.href = URL.createObjectURL(zipBlob);
@@ -7763,9 +7952,9 @@ async function generateDeckFromZip() {
 			document.body.appendChild(downloadElement);
 			downloadElement.click();
 			downloadElement.remove();
-			
+
 			progressText.textContent = `Complete! Downloaded ${successCount.value} card(s).`;
-			
+
 			// Show summary notification
 			if (failedCards.length > 0) {
 				notify(
@@ -7790,11 +7979,11 @@ async function generateDeckFromZip() {
 		// Restore previous autoframe setting
 		document.querySelector('#autoFrame').value = previousAutoFrame;
 		localStorage.setItem('autoFrame', previousAutoFrame);
-		
+
 		// Reset generation state
 		deckGenerationState.isGenerating = false;
 		generateButton.disabled = false;
-		
+
 		// Hide progress after 5 seconds
 		setTimeout(() => {
 			progressDiv.style.display = 'none';
