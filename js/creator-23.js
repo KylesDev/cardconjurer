@@ -4965,7 +4965,7 @@ async function bottomInfoEdited() {
 	card.infoNoteRight1 = document.querySelector('#info-note-right-1').value;
 	card.infoNoteRight2 = document.querySelector('#info-note-right-2').value;
 
-	if (document.querySelector('#enableCollectorInfo').checked) {
+	if (document.querySelector('#enableCollectorInfo').checked && card.bottomInfo) {
 		for (var textObject of Object.entries(card.bottomInfo)) {
 			if (["NOT FOR SALE", "Wizards of the Coast", "CardConjurer.com", "cardconjurer.com"].some(v => textObject[1].text.includes(v))) {
 				continue;
