@@ -148,8 +148,8 @@ async function setBottomInfoStyle() {
 				midLeft: {text:'{elemidinfo-set} \u2022 {elemidinfo-language}  {savex}{fontbelerenbsc}{fontsize' + scaleHeight(0.001) + '}{upinline' + scaleHeight(0.0005) + '}\uFFEE{savex2}{elemidinfo-artist}', x:0.0647, y:0.9548, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
 				topLeft: {text:'{elemidinfo-rarity} {kerning3}{elemidinfo-number}{kerning0}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
 				note: {text:'{loadx}{elemidinfo-note}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
-				noteRight1: {text:'{elemidinfo-note-right-1}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align:'right'},
-				noteRight2: {text:'{elemidinfo-note-right-2}', x:0.0647, y:0.9548, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align:'right'},
+				noteExtra1: {text:'{elemidinfo-note-extra-1}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align: 'right'},
+				noteExtra2: {text:'{elemidinfo-note-extra-2}', x:0.0647, y:0.9548, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align: 'right'},
 				bottomLeft: {text:'NOT FOR SALE', x:0.0647, y:0.9719, width:0.8707, height:0.0143, oneLine:true, font:'gothammedium', size:0.0143, color:card.bottomInfoColor, outlineWidth:0.003},
 				wizards: {name:'wizards', text:'{ptshift0,0.0172}\u2122 & \u00a9 {elemidinfo-year} Wizards of the Coast', x:0.0647, y:0.9377, width:0.8707, height:0.0167, oneLine:true, font:'mplantin', size:0.0162, color:card.bottomInfoColor, align:'right', outlineWidth:0.003},
 				bottomRight: {text:'{ptshift0,0.0172}CardConjurer.com', x:0.0647, y:0.9548, width:0.8707, height:0.0143, oneLine:true, font:'mplantin', size:0.0143, color:card.bottomInfoColor, align:'right', outlineWidth:0.003}
@@ -160,8 +160,8 @@ async function setBottomInfoStyle() {
 				topLeft: {text:'{elemidinfo-number}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
 				note: {text:'{loadx2}{elemidinfo-note}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
 				rarity: {text:'{loadx}{elemidinfo-rarity}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003},
-				noteRight1: {text:'{elemidinfo-note-right-1}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align:'right'},
-				noteRight2: {text:'{elemidinfo-note-right-2}', x:0.0647, y:0.9548, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align:'right'},
+				noteExtra1: {text:'{elemidinfo-note-extra-1}', x:0.0647, y:0.9377, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align: 'right'},
+				noteExtra2: {text:'{elemidinfo-note-extra-2}', x:0.0647, y:0.9548, width:0.8707, height:0.0171, oneLine:true, font:'gothammedium', size:0.0171, color:card.bottomInfoColor, outlineWidth:0.003, align: 'right'},
 				bottomLeft: {text:'NOT FOR SALE', x:0.0647, y:0.9719, width:0.8707, height:0.0143, oneLine:true, font:'gothammedium', size:0.0143, color:card.bottomInfoColor, outlineWidth:0.003},
 				wizards: {name:'wizards', text:'{ptshift0,0.0172}\u2122 & \u00a9 {elemidinfo-year} Wizards of the Coast', x:0.0647, y:0.9377, width:0.8707, height:0.0167, oneLine:true, font:'mplantin', size:0.0162, color:card.bottomInfoColor, align:'right', outlineWidth:0.003},
 				bottomRight: {text:'{ptshift0,0.0172}CardConjurer.com', x:0.0647, y:0.9548, width:0.8707, height:0.0143, oneLine:true, font:'mplantin', size:0.0143, color:card.bottomInfoColor, align:'right', outlineWidth:0.003}
@@ -3842,7 +3842,7 @@ function writeText(textObject, targetContext) {
 		var textLineCap = textObject.lineCap || 'round';
 		var textLineJoin = textObject.lineJoin || 'round';
 		var hideBottomInfoBorder = card.hideBottomInfoBorder || false;
-		if (hideBottomInfoBorder && ['midLeft', 'topLeft', 'note', 'bottomLeft', 'wizards', 'bottomRight', 'rarity'].includes(textObject.name)) {
+		if (hideBottomInfoBorder && ['midLeft', 'topLeft', 'note', 'bottomLeft', 'wizards', 'bottomRight', 'rarity', 'noteExtra1', 'noteExtra2'].includes(textObject.name)) {
 			textOutlineWidth = 0;
 		}
 		lineContext.lineWidth = textOutlineWidth;
@@ -4962,8 +4962,8 @@ async function bottomInfoEdited() {
 	card.infoArtist = document.querySelector('#info-artist').value;
 	card.infoYear = document.querySelector('#info-year').value;
 	card.infoNote = document.querySelector('#info-note').value;
-	card.infoNoteRight1 = document.querySelector('#info-note-right-1').value;
-	card.infoNoteRight2 = document.querySelector('#info-note-right-2').value;
+	card.infoNoteExtra1 = document.querySelector('#info-note-extra-1').value;
+	card.infoNoteExtra2 = document.querySelector('#info-note-extra-2').value;
 
 	if (document.querySelector('#enableCollectorInfo').checked && card.bottomInfo) {
 		for (var textObject of Object.entries(card.bottomInfo)) {
@@ -5056,8 +5056,8 @@ function setDefaultCollector() {
 		setCode: document.querySelector('#info-set').value,
 		lang: document.querySelector('#info-language').value,
 		note: document.querySelector('#info-note').value,
-		noteRight1: document.querySelector('#info-note-right-1').value,
-		noteRight2: document.querySelector('#info-note-right-2').value,
+		noteExtra1: document.querySelector('#info-note-extra-1').value,
+		noteExtra2: document.querySelector('#info-note-extra-2').value,
 		starDot: starDot
 	};
 	localStorage.setItem('defaultCollector', JSON.stringify(defaultCollector));
@@ -6839,11 +6839,11 @@ if ('number' in defaultCollector) {
 	document.querySelector('#info-rarity').value = defaultCollector.rarity;
 	document.querySelector('#info-set').value = defaultCollector.setCode;
 	document.querySelector('#info-language').value = defaultCollector.lang;
-	if (defaultCollector.noteRight1) {
-		document.querySelector('#info-note-right-1').value = defaultCollector.noteRight1;
+	if (defaultCollector.noteExtra1) {
+		document.querySelector('#info-note-extra-1').value = defaultCollector.noteExtra1;
 	}
-	if (defaultCollector.noteRight2) {
-		document.querySelector('#info-note-right-2').value = defaultCollector.noteRight2;
+	if (defaultCollector.noteExtra2) {
+		document.querySelector('#info-note-extra-2').value = defaultCollector.noteExtra2;
 	}
 	if (defaultCollector.starDot) {setTimeout(function(){defaultCollector.starDot = false; toggleStarDot();}, 500);}
 } else {
