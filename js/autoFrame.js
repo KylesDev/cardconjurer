@@ -23,15 +23,19 @@
 
 
 // ============================================================================
-// NICKNAME FRAME REGISTRY
+// ELEMENT-NAMED FRAME REGISTRY (Import Deck)
 // ============================================================================
-// Extendable registry of frame types that use the nickname layout (separate
-// Nickname and Title text fields, assembled by autoNicknameFrame).
-// To add a new nickname frame: add a key matching the dropdown value and
-// pack<Value>.js filename. See spec §8 for details.
-const NICKNAME_FRAME_CONFIG = {
-	'M15Nickname':      { pack: 'M15Nickname' },
-	'IkoNicknameShort': { pack: 'IkoNicknameShort' }
+// Extendable registry of frame types assembled by element name (autoElementFrame).
+// Key = dropdown value = pack<Value>.js filename. Flags:
+//   nickname     – pack has a separate Nickname text field
+//   crown        – pack has a '<Color> Crown' element for Legendary cards
+//   titleElement – pack has a '<Color> Title' element for non-Legendary cards
+// See spec §8 for how to add more.
+const IMPORT_FRAME_CONFIG = {
+	'M15Nickname':      { pack: 'M15Nickname',      nickname: true,  crown: true,  titleElement: true  },
+	'IkoNicknameShort': { pack: 'IkoNicknameShort', nickname: true,  crown: true,  titleElement: true  },
+	'PromoRegular-1':   { pack: 'PromoRegular-1',   nickname: false, crown: false, titleElement: false },
+	'IkoShort':         { pack: 'IkoShort',         nickname: false, crown: false, titleElement: false }
 };
 
 // ============================================================================
@@ -1758,9 +1762,9 @@ function autoFrame() {
 			loadScript('/js/frames/pack' + frame + '.js');
 			autoFramePack = frame;
 		}
-	} else if (NICKNAME_FRAME_CONFIG[frame]) {
-		autoNicknameFrame(
-			NICKNAME_FRAME_CONFIG[frame], colors,
+	} else if (IMPORT_FRAME_CONFIG[frame]) {
+		autoElementFrame(
+			IMPORT_FRAME_CONFIG[frame], colors,
 			card.text.mana.text, card.text.type.text, card.text.pt.text,
 			window.deckImportNickname || ''
 		);
@@ -1833,10 +1837,14 @@ function clampImportTextWidths(topNameKey) {
 	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
 }
 
-// Assembles a nickname-style frame (one with separate Nickname + Title text fields).
-// Imitates autoBloomburrowFrame: snapshot text, apply pack layout, restore text, set nickname,
-// build frame layers from availableFrames by element name.
-async function autoNicknameFrame(config, colors, mana_cost, type_line, power, nickname) {
+// Assembles a frame whose layers are picked by element name from the pack's availableFrames.
+// Imitates autoBloomburrowFrame: snapshot text, apply the pack's text layout, restore text,
+// (optionally) set the nickname, then build base + Crown/Title + P/T layers. Config flags:
+//   nickname     – pack has a separate Nickname text field (set it; clamp the nickname box)
+//   crown        – pack has a '<Color> Crown' element to add for Legendary cards
+//   titleElement – pack has a '<Color> Title' element to add for non-Legendary cards
+// Borderless frames set all three false (just base + P/T, title in the normal title field).
+async function autoElementFrame(config, colors, mana_cost, type_line, power, nickname) {
 	// Map color letter → full color name used in element names
 	const colorNameMap = {
 		'W': 'White', 'U': 'Blue', 'B': 'Black', 'R': 'Red', 'G': 'Green',
@@ -1877,13 +1885,14 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 		});
 	}
 
-	// Set the nickname field: use provided nickname or fall back to the card's own title
-	if (card.text && card.text.nickname) {
+	// Set the nickname field (nickname frames only): provided nickname or fall back to the title
+	if (config.nickname && card.text && card.text.nickname) {
 		card.text.nickname.text = nickname || (card.text.title ? card.text.title.text : '');
 	}
 
-	// Import-only: keep the nickname clear of the mana cost and the type line clear of the set symbol
-	clampImportTextWidths('nickname');
+	// Import-only: keep the top name clear of the mana cost and the type line clear of the set
+	// symbol. The big top name is the nickname on nickname frames, otherwise the title.
+	clampImportTextWidths(config.nickname ? 'nickname' : 'title');
 
 	// Preserve extension/holo frames (same pattern as autoBloomburrowFrame)
 	var preservedFrames = card.frames.filter(frame =>
@@ -1923,12 +1932,12 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 		if (ptEl) newFrames.push(ptEl);
 	}
 
-	// 2. Crown (if Legendary) or Title frame element
+	// 2. Crown (Legendary) or Title element, when the pack provides them
 	var isLegendary = type_line.toLowerCase().includes('legendary');
-	if (isLegendary) {
+	if (config.crown && isLegendary) {
 		var crownEl = findFrameElement(colorName + ' Crown');
 		if (crownEl) newFrames.push(crownEl);
-	} else {
+	} else if (config.titleElement) {
 		var titleEl = findFrameElement(colorName + ' Title');
 		if (titleEl) newFrames.push(titleEl);
 	}

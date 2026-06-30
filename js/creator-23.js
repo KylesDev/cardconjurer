@@ -5172,7 +5172,7 @@ async function generateDeck() {
 	}
 
 	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
-	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
 		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
 		await new Promise(resolve => setTimeout(resolve, 800));
 	}
@@ -5335,7 +5335,7 @@ async function generateSingleCard() {
 	}
 
 	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
-	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
 		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
 		await new Promise(resolve => setTimeout(resolve, 800));
 	}
@@ -5895,7 +5895,7 @@ async function generateDeckFromZip() {
 	}
 
 	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
-	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
 		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
 		await new Promise(resolve => setTimeout(resolve, 800));
 	}
