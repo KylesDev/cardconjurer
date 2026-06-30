@@ -5489,18 +5489,29 @@ function fetchScryfallCardByExactName(cardName) {
 }
 
 // Import Deck set symbol handling. Call right after importCardForDeck, before the card is rendered.
-// changeCardIndex leaves #set-symbol-code unset on import (its code assignment is commented out)
-// yet still calls fetchSetSymbol(), which falls back to CardConjurer's 'cmd' default symbol — that
-// default then shows on every card and, since the code field stays empty, the type-line clamp
-// can't detect it. We fix both: when the "Use custom set symbol" toggle is on, apply the entered
-// code to every card; otherwise apply each card's OWN set code (from Scryfall). Either way the
-// code field is populated (no 'cmd' default) and the per-card rarity set by changeCardIndex kept.
+// Driven by the "Insert set symbol" toggle:
+//   - OFF: no set symbol at all (blank it out).
+//   - ON + code entered: that code on every card.
+//   - ON + no code: each card's OWN Scryfall set code.
+// This also avoids CardConjurer's 'cmd' default: changeCardIndex leaves #set-symbol-code unset on
+// import (its code assignment is commented out) yet still calls fetchSetSymbol(), which falls back
+// to 'cmd' — so without this the wrong symbol shows and the empty code field hides it from the
+// type-line clamp. The per-card rarity set by changeCardIndex is always kept.
 function applyDeckSetSymbolOverride() {
-	const toggle = document.querySelector('#importSetSymbolToggleDeck');
+	const insert = document.querySelector('#importSetSymbolToggleDeck');
 	const codeEl = document.querySelector('#importSetSymbolCodeDeck');
+
+	// Toggle off → no set symbol: clear the code and blank the symbol image.
+	if (!insert || !insert.checked) {
+		document.querySelector('#set-symbol-code').value = '';
+		setSymbol.src = blank.src;
+		card.setSymbolSource = blank.src;
+		return;
+	}
+
 	let code = '';
-	if (toggle && toggle.checked && codeEl && codeEl.value.trim()) {
-		code = codeEl.value.trim(); // explicit custom code for every card
+	if (codeEl && codeEl.value.trim()) {
+		code = codeEl.value.trim(); // explicit code for every card
 	} else if (!document.querySelector('#lockSetSymbolCode').checked) {
 		// Use the imported card's own set code instead of the 'cmd' default.
 		try {
