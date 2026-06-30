@@ -5069,6 +5069,15 @@ const CANVAS_RENDER_TIMEOUT_MS = 1000; // Time to wait for canvas rendering to c
 const ART_LOAD_TIMEOUT_MS = 3000; // Time to wait for art image to load
 const ART_LOAD_POLL_INTERVAL_MS = 250; // Interval for polling art load status
 
+// Splits a raw card name into { name, nickname }.
+// Supports the unified [Nickname] bracket syntax: "Card Name [Nickname]" → { name, nickname }.
+// Without brackets, nickname is '' (no-op for non-nickname frames).
+function splitNickname(rawName) {
+	const m = rawName.match(/^(.*?)\s*\[(.+)\]\s*$/);
+	return m ? { name: m[1].trim(), nickname: m[2].trim() }
+	         : { name: rawName.trim(), nickname: '' };
+}
+
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
 	const cards = [];
@@ -5077,15 +5086,15 @@ function parseDeckList(deckListText) {
 		const trimmedLine = line.trim();
 		if (!trimmedLine) continue;
 
-		// Parse format: {numberOfCopies} {cardName}
+		// Parse format: {numberOfCopies} {cardName [optionalNickname]}
 		const match = trimmedLine.match(/^(\d+)\s+(.+)$/);
 		if (match) {
 			const copies = parseInt(match[1], 10);
-			const cardName = match[2].trim();
+			const { name, nickname } = splitNickname(match[2].trim());
 
 			// Validate number of copies
 			if (copies >= 1 && copies <= 100) {
-				cards.push({ name: cardName, copies: copies });
+				cards.push({ name, nickname, copies });
 			} else {
 				console.warn(`Invalid number of copies for card: ${line}`);
 			}
@@ -5162,6 +5171,12 @@ async function generateDeck() {
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
 
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
+	}
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
@@ -5193,7 +5208,9 @@ async function generateDeck() {
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					window.deckImportNickname = cardEntry.nickname || '';
 					autoFrame();
+					window.deckImportNickname = '';
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
@@ -5287,6 +5304,7 @@ async function generateSingleCard() {
 	}
 
 	const cardName = singleImageUpload.cardName;
+	const cardNickname = singleImageUpload.nickname || '';
 
 	// Ask user for confirmation
 	const confirmed = confirm(
@@ -5313,6 +5331,12 @@ async function generateSingleCard() {
 	if (selectedFrameStyle !== 'false') {
 		document.querySelector('#autoFrame').value = selectedFrameStyle;
 		localStorage.setItem('autoFrame', selectedFrameStyle);
+	}
+
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
 	}
 
 	// Show progress UI
@@ -5377,7 +5401,9 @@ async function generateSingleCard() {
 
 		// Trigger autoframe if enabled
 		if (selectedFrameStyle !== 'false') {
+			window.deckImportNickname = cardNickname;
 			autoFrame();
+			window.deckImportNickname = '';
 			// Wait for autoframe to complete - use longer timeout for complex frames
 			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
 		}
@@ -5622,12 +5648,13 @@ async function handleSingleImageUpload(event) {
 		// Clear any existing uploads
 		clearUploadedFiles();
 
-		const cardName = parseImageFilename(file.name);
+		const { name: cardName, nickname: cardNickname } = parseImageFilename(file.name);
 		const imageUrl = URL.createObjectURL(file);
 
 		// Store single image upload
 		singleImageUpload = {
 			cardName: cardName,
+			nickname: cardNickname,
 			imageUrl: imageUrl,
 			fileName: file.name
 		};
@@ -5678,15 +5705,15 @@ async function handleZipUpload(event) {
 
 		// Process each image
 		for (const { fileName, zipEntry } of imageFiles) {
-			const cardName = parseImageFilename(fileName);
+			const { name: cardName, nickname: cardNickname } = parseImageFilename(fileName);
 			const blob = await zipEntry.async('blob');
 			const imageUrl = URL.createObjectURL(blob);
 
-			// Store image URL by card name
+			// Store image URL and nickname by card name
 			if (!zipCardImages[cardName]) {
-				zipCardImages[cardName] = [];
+				zipCardImages[cardName] = { nickname: cardNickname, urls: [] };
 			}
-			zipCardImages[cardName].push(imageUrl);
+			zipCardImages[cardName].urls.push(imageUrl);
 		}
 
 		notify(`Loaded ${imageFiles.length} image(s) from ZIP for ${Object.keys(zipCardImages).length} unique card(s).`, 3);
@@ -5719,7 +5746,7 @@ function clearUploadedFiles() {
 function clearZipImages() {
 	// Release object URLs to free memory
 	for (const cardName in zipCardImages) {
-		for (const url of zipCardImages[cardName]) {
+		for (const url of zipCardImages[cardName].urls) {
 			URL.revokeObjectURL(url);
 		}
 	}
@@ -5746,17 +5773,23 @@ function clearUploadedFilesUI() {
 	notify('Uploaded files cleared.', 2);
 }
 
+// Returns { name, nickname } from a filename like "Sol Ring [Anello]_(2).png".
+// Steps: strip extension → strip copy suffix → splitNickname → replace _ with spaces on both parts.
 function parseImageFilename(filename) {
 	// Remove file extension
-	let name = filename.substring(0, filename.lastIndexOf('.'));
+	let raw = filename.substring(0, filename.lastIndexOf('.'));
 
 	// Remove copy number suffix like _(2), _(3), etc.
-	name = name.replace(/_\(\d+\)$/, '');
+	raw = raw.replace(/_\(\d+\)$/, '');
 
-	// Replace underscores with spaces
-	name = name.replace(/_/g, ' ');
+	// Split into name and optional nickname using bracket syntax
+	let { name, nickname } = splitNickname(raw);
 
-	return name.trim();
+	// Replace underscores with spaces in both parts
+	name = name.replace(/_/g, ' ').trim();
+	nickname = nickname.replace(/_/g, ' ').trim();
+
+	return { name, nickname };
 }
 
 async function generateDeckFromZip() {
@@ -5773,15 +5806,17 @@ async function generateDeckFromZip() {
 	// Create card list from ZIP images
 	const cards = [];
 
-	for (const [cardName, images] of Object.entries(zipCardImages)) {
+	for (const [cardName, cardData] of Object.entries(zipCardImages)) {
+		const { nickname, urls } = cardData;
 		// Each image represents one copy
-		for (let i = 0; i < images.length; i++) {
+		for (let i = 0; i < urls.length; i++) {
 			cards.push({
 				name: cardName,
+				nickname: nickname,
 				copies: 1,
-				imageUrl: images[i],
+				imageUrl: urls[i],
 				copyNumber: i + 1,  // Track which copy this is (1-indexed)
-				totalCopies: images.length  // Total copies of this card
+				totalCopies: urls.length  // Total copies of this card
 			});
 		}
 	}
@@ -5817,6 +5852,12 @@ async function generateDeckFromZip() {
 	if (selectedFrameStyle !== 'false') {
 		document.querySelector('#autoFrame').value = selectedFrameStyle;
 		localStorage.setItem('autoFrame', selectedFrameStyle);
+	}
+
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof NICKNAME_FRAME_CONFIG !== 'undefined' && NICKNAME_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
 	}
 
 	// Show progress UI
@@ -5858,7 +5899,9 @@ async function generateDeckFromZip() {
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					window.deckImportNickname = cardEntry.nickname || '';
 					autoFrame();
+					window.deckImportNickname = '';
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
