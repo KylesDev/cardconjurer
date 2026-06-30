@@ -1808,10 +1808,14 @@ function clampImportTextWidths(topNameKey) {
 	var typeField = card.text.type;
 	var ssb = card.setSymbolBounds;
 	var setCodeEl = document.querySelector('#set-symbol-code');
+	// A set symbol is shown if a code is entered OR a (non-blank) symbol image is loaded — the
+	// latter catches CardConjurer's default symbol, which renders even with an empty code field.
+	var hasSetSymbol = (setCodeEl && setCodeEl.value) ||
+		(card.setSymbolSource && card.setSymbolSource.indexOf('/img/blank.png') === -1);
 	if (typeField) {
 		if (typeField._importFullWidth == null) { typeField._importFullWidth = typeField.width; }
 		var fullTW = typeField._importFullWidth;
-		if (ssb && setCodeEl && setCodeEl.value) {
+		if (ssb && hasSetSymbol) {
 			var reserveW = ssb.width || ((ssb.height || 0.04) * aspect);
 			var ssLeft;
 			if (ssb.horizontal === 'right') { ssLeft = (ssb.x || 1) - reserveW; }

@@ -5488,15 +5488,30 @@ function fetchScryfallCardByExactName(cardName) {
 	});
 }
 
-// Import Deck: when the "Use custom set symbol" toggle is on, override the set symbol code for
-// every generated card with the user-provided code, keeping each card's own rarity (already set
-// by changeCardIndex). Call this right after importCardForDeck, before the card is rendered.
+// Import Deck set symbol handling. Call right after importCardForDeck, before the card is rendered.
+// changeCardIndex leaves #set-symbol-code unset on import (its code assignment is commented out)
+// yet still calls fetchSetSymbol(), which falls back to CardConjurer's 'cmd' default symbol — that
+// default then shows on every card and, since the code field stays empty, the type-line clamp
+// can't detect it. We fix both: when the "Use custom set symbol" toggle is on, apply the entered
+// code to every card; otherwise apply each card's OWN set code (from Scryfall). Either way the
+// code field is populated (no 'cmd' default) and the per-card rarity set by changeCardIndex kept.
 function applyDeckSetSymbolOverride() {
 	const toggle = document.querySelector('#importSetSymbolToggleDeck');
 	const codeEl = document.querySelector('#importSetSymbolCodeDeck');
+	let code = '';
 	if (toggle && toggle.checked && codeEl && codeEl.value.trim()) {
-		document.querySelector('#set-symbol-code').value = codeEl.value.trim();
-		fetchSetSymbol(); // re-fetches with the custom code + the per-card rarity
+		code = codeEl.value.trim(); // explicit custom code for every card
+	} else if (!document.querySelector('#lockSetSymbolCode').checked) {
+		// Use the imported card's own set code instead of the 'cmd' default.
+		try {
+			const idx = document.querySelector('#import-index').value || 0;
+			const c = (typeof scryfallCard !== 'undefined' && scryfallCard) ? scryfallCard[idx] : null;
+			if (c && c.set) { code = c.set; }
+		} catch (e) { /* leave code empty */ }
+	}
+	if (code) {
+		document.querySelector('#set-symbol-code').value = code;
+		fetchSetSymbol(); // re-fetches with this code + the per-card rarity
 	}
 }
 
