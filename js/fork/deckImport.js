@@ -409,8 +409,10 @@ function parseImageFilename(filename) {
 	// Remove file extension
 	let raw = filename.substring(0, filename.lastIndexOf('.'));
 
-	// Remove copy number suffix like _(2), _(3), etc.
-	raw = raw.replace(/_\(\d+\)$/, '');
+	// Remove copy number suffix like _(2), (2), -(2), etc. Browsers add " (1)"
+	// (with a space) on duplicate downloads, so accept an optional space/underscore/dash
+	// before the parenthesised number.
+	raw = raw.replace(/[ _-]?\(\d+\)\s*$/, '');
 
 	// Split into name and optional nickname using bracket syntax
 	let { name, nickname } = splitNickname(raw);
