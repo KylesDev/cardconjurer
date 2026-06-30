@@ -5200,6 +5200,7 @@ async function generateDeck() {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
 				applyDeckSetSymbolOverride();
+				await applyDeckCollectorInfo(cards.indexOf(cardEntry) + 1);
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 
@@ -5358,6 +5359,7 @@ async function generateSingleCard() {
 		// Import the card from Scryfall
 		await importCardForDeck(cardName);
 		applyDeckSetSymbolOverride();
+		await applyDeckCollectorInfo(1);
 
 		progressText.textContent = `Loading: ${cardName}...`;
 		progressBar.value = 40;
@@ -5524,6 +5526,60 @@ function applyDeckSetSymbolOverride() {
 		document.querySelector('#set-symbol-code').value = code;
 		fetchSetSymbol(); // re-fetches with this code + the per-card rarity
 	}
+}
+
+// Import Deck collector info. Call right after importCardForDeck (await it), before rendering.
+// When the "Add collector info" toggle is on, forces the new (post-ONE) style + shows collector
+// info, then fills the #info-* fields used by the render: card number (auto-progressive or the
+// entered value), rarity (from each card or the entered value), artist (from each card or the
+// entered value), and the uniform set/language/year/notes. Empty fields are left blank.
+// entryNumber is the 1-based position used for the auto-progressive card number.
+async function applyDeckCollectorInfo(entryNumber) {
+	const enable = document.querySelector('#deckCollectorToggle');
+	if (!enable || !enable.checked) { return; }
+
+	const card0 = (() => {
+		try {
+			const idx = document.querySelector('#import-index').value || 0;
+			return (typeof scryfallCard !== 'undefined' && scryfallCard) ? scryfallCard[idx] : null;
+		} catch (e) { return null; }
+	})();
+	const val = id => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+
+	// Force the new (post-ONE) collector style and make collector info visible.
+	document.querySelector('#enableNewCollectorStyle').checked = true;
+	document.querySelector('#enableCollectorInfo').checked = true;
+	localStorage.setItem('enableNewCollectorStyle', 'true');
+	localStorage.setItem('enableCollectorInfo', 'true');
+
+	// Card number: auto-progressive (zero-padded) or the entered value.
+	const autoNum = document.querySelector('#deckCollectorAutoNumber');
+	document.querySelector('#info-number').value =
+		(autoNum && autoNum.checked) ? String(entryNumber).padStart(3, '0') : val('#deckCollectorNumber');
+
+	// Rarity: from the card (first letter, uppercase) or the entered value.
+	const rarFromCard = document.querySelector('#deckCollectorRarityFromCard');
+	document.querySelector('#info-rarity').value =
+		(rarFromCard && rarFromCard.checked) ? (card0 && card0.rarity ? card0.rarity.charAt(0).toUpperCase() : '')
+		                                     : val('#deckCollectorRarity');
+
+	// Artist: from the card or the entered value.
+	const artFromCard = document.querySelector('#deckCollectorArtistFromCard');
+	document.querySelector('#info-artist').value =
+		(artFromCard && artFromCard.checked) ? (card0 && card0.artist ? card0.artist : '')
+		                                     : val('#deckCollectorArtist');
+
+	// Uniform fields (left blank when empty).
+	document.querySelector('#info-set').value = val('#deckCollectorSet');
+	document.querySelector('#info-language').value = val('#deckCollectorLanguage');
+	document.querySelector('#info-year').value = val('#deckCollectorYear');
+	document.querySelector('#info-note').value = val('#deckCollectorNote');
+	document.querySelector('#info-note-extra-1').value = val('#deckCollectorNoteExtra1');
+	document.querySelector('#info-note-extra-2').value = val('#deckCollectorNoteExtra2');
+
+	// Rebuild the bottom-info layout for the new style, then render with the values above.
+	await setBottomInfoStyle();
+	bottomInfoEdited();
 }
 
 function importCardForDeck(cardName) {
@@ -5926,6 +5982,7 @@ async function generateDeckFromZip() {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
 				applyDeckSetSymbolOverride();
+				await applyDeckCollectorInfo(cards.indexOf(cardEntry) + 1);
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 

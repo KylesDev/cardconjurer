@@ -794,6 +794,44 @@
 							<h5 class='padding margin-bottom input-description'>When on: if a code is entered below it is applied to every card, otherwise each card's own set is used (the rarity from each card is always kept). Turn it off to add no set symbol at all.</h5>
 							<input id='importSetSymbolCodeDeck' class='input margin-bottom' type='text' placeholder="Set symbol code (e.g. 'neo', 'mh3')">
 						</div>
+						<div class='readable-background margin-bottom padding'>
+							<h5 class='collapsible collapsed padding input-description' onclick='toggleCollapse(event);'>Collector info</h5>
+							<div class='padding'>
+								<label class='checkbox-container input margin-bottom'>Add collector info
+									<input id='deckCollectorToggle' type='checkbox'>
+									<span class='checkmark'></span>
+								</label>
+								<h5 class='margin-top margin-bottom input-description'>Uses the new (post-ONE) collector info style. Empty fields are left blank, like the Collector Info tab.</h5>
+								<label class='checkbox-container input margin-bottom'>Auto progressive card number
+									<input id='deckCollectorAutoNumber' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<input id='deckCollectorNumber' class='input margin-bottom' type='text' placeholder='Card number (used when auto is off)'>
+								<label class='checkbox-container input margin-bottom'>Rarity from each card
+									<input id='deckCollectorRarityFromCard' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<input id='deckCollectorRarity' class='input margin-bottom' type='text' placeholder='Rarity (used when off, e.g. C / U / R / M)'>
+								<label class='checkbox-container input margin-bottom'>Artist from each card
+									<input id='deckCollectorArtistFromCard' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<h5 class='margin-top margin-bottom input-description'>Applied once to every card:</h5>
+								<div class='padding input-grid'>
+									<input id='deckCollectorSet' class='input' type='text' placeholder='Set (e.g. NEO)'>
+									<input id='deckCollectorLanguage' class='input' type='text' placeholder='Language (e.g. EN)'>
+									<input id='deckCollectorArtist' class='input' type='text' placeholder='Artist (when off above)'>
+								</div>
+								<div class='padding input-grid'>
+									<input id='deckCollectorYear' class='input' type='number' placeholder='Year'>
+									<input id='deckCollectorNote' class='input' type='text' placeholder='Note'>
+								</div>
+								<div class='padding input-grid'>
+									<input id='deckCollectorNoteExtra1' class='input' type='text' placeholder='Extra Note 1'>
+									<input id='deckCollectorNoteExtra2' class='input' type='text' placeholder='Extra Note 2'>
+								</div>
+							</div>
+						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='padding margin-bottom input-description'>Generate and download all cards in the decklist</h5>
 							<button id='generate-deck-button' class='input margin-bottom' onclick='generateDeck();'>Generate & Download Deck</button>
