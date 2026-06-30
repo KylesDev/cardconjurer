@@ -1830,11 +1830,20 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 	card.frames = [];
 	document.querySelector('#frame-list').innerHTML = null;
 
-	// Helper: find a frame element by name in availableFrames and clone it
+	// Helper: find a frame element by name in availableFrames and clone it.
+	// The pack's `masks` array on each element is the list of SELECTABLE masks
+	// (meant for the user to pick one); drawFrames() applies every mask in the
+	// array via 'source-in', i.e. as an intersection, which for the base frame's
+	// [Pinline, Type, Rules, Border] is ~empty and masks the whole layer out.
+	// These nickname PNGs are standalone, already-shaped images shown whole at
+	// their bounds, so we drop the masks entirely (same as autoBloomburrowFrame).
 	function findFrameElement(name) {
 		if (!availableFrames) return null;
 		var el = availableFrames.find(f => f.name === name);
-		return el ? JSON.parse(JSON.stringify(el)) : null;
+		if (!el) return null;
+		var clone = JSON.parse(JSON.stringify(el));
+		clone.masks = [];
+		return clone;
 	}
 
 	var newFrames = [...preservedFrames];

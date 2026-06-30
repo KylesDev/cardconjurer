@@ -742,12 +742,14 @@
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Paste your decklist below</h5>
 							<h5 class='padding margin-bottom input-description'>Format: {numberOfCopies} {cardName} (e.g., "1 Negate" or "15 Plains")</h5>
-							<textarea id='deck-list-input' class='input margin-bottom' placeholder='1 Negate&#10;1 Pilgrim&apos;s Eye&#10;15 Plains&#10;1 Port Town' rows='15'></textarea>
+							<h5 class='padding margin-bottom input-description'>Nickname frames: append the nickname in square brackets after the card name, e.g. "1 Llanowar Elves [Elf Bestie]". The card name still goes in the Title field (used for the Scryfall lookup); the bracketed text becomes the Nickname. Cards with no brackets fall back to using the card name as the nickname.</h5>
+							<textarea id='deck-list-input' class='input margin-bottom' placeholder='1 Negate&#10;1 Llanowar Elves [Elf Bestie]&#10;15 Plains&#10;1 Questing Beast [The Beast]' rows='15'></textarea>
 						</div>
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Or upload a single image or ZIP file of card images</h5>
 							<h5 class='padding margin-bottom input-description'>For single images: filename should be the card name (e.g., "Forest.jpg", "Spider-Man 2099.png")</h5>
 							<h5 class='padding margin-bottom input-description'>For ZIP files: multiple copies can be indicated with _(number) suffix (e.g., "Plains_(2).png")</h5>
+							<h5 class='padding margin-bottom input-description'>Nickname frames: add the nickname in square brackets after the card name in the filename, e.g. "Llanowar Elves [Elf Bestie].png" or "Llanowar Elves [Elf Bestie]_(2).png". The card name is used for the Scryfall lookup and goes in the Title field; the bracketed text becomes the Nickname.</h5>
 							<div class='padding drop-area'>
 					            <h5 class='margin-bottom padding input-description'>Drag and drop single image (PNG/JPG) or ZIP file, or click to select</h5>
 					            <input id='deck-zip-input' type='file' accept='.zip,.png,.jpg,.jpeg' placeholder='Upload file' class='input' onchange='handleFileUpload(event);'>
