@@ -15,7 +15,6 @@ loadFramePacks([
 	{name:'"The List" Stamp', value:'TheList'},
 	{name:'Other Frames', value:'disabled'},
 	{name:'Lands', value:'M15Lands'},
-	{name:'Prepare (Secrets of Strixhaven)', value: 'Prepare'},
 	{name:'Stations', value:'StationRegular'},
 	{name:'Borderless Stations', value:'StationBorderless'},
 	{name:'Omens (Tarkir Dragonstorm)', value:'Omen'},

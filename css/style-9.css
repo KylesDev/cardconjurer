@@ -76,10 +76,6 @@
 	src: url("../fonts/Acme-Regular.ttf") format('truetype');
 }
 @font-face {
-	font-family: PixelFont-Regular;
-	src: url("../fonts/PixelFont-Regular.ttf") format('truetype');
-}
-@font-face {
 	font-family: fritz-quadrata;
 	src: url("../fonts/fritz-quadrata.ttf") format('truetype');
 }
@@ -210,10 +206,6 @@
 @font-face {
 	font-family: thunderman;
 	src: url('../fonts/Thunderman.ttf') format("truetype");
-}
-@font-face {
-	font-family: sewertmt-ccrumble;
-	src: url('../fonts/SewerTMT-CCRumble.ttf') format('truetype');
 }
 /*Variables*/
 :root {

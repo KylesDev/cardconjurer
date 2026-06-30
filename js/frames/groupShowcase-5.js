@@ -1,10 +1,5 @@
 loadFramePacks([
 	{name:'Set Showcase Frames (Chronological)', value:'disabled'},
-	{name:'Pixel (TMT)', value:'PixelTMT'},
-	{name:'Sewer (TMT)', value:'SewerTMT'},
-	{name:'Mystical Archive (SOA)', value:'MysticalArchiveSOA'},
-	{name:'Fable (ECL)', value:'FableECL'},
-	{name:'Neon Ink (TLA)', value:'NeonInk'},
 	{name:'Avatar Elemental (TLA)', value:'Elemental'},
 	{name:'Borderless Stellar Sights (EOS)', value:'BorderlessStellarSights'},
 	{name:'Poster Stellar Sights (EOS)', value:'PosterStellarSights'},
@@ -57,7 +52,7 @@ loadFramePacks([
 	{name:'Sketch Cards (MH2)', value:'MH2'},
 	{name:'Mystical Archive (STA)', value:'MysticalArchive'},
 	{name:'Japanese Mystical Archive (STA)', value:'MysticalArchiveJP'},
-	{name:'Horizontal Japanese Mystical Archive (STA)', value:'MysticalArchiveJPEN'},
+	{name:'Horizontal Japanese Mystical Archive (STA)', value:'MysticalArchiveJPHorizontal'},
 	{name:'Kaldheim (KHM)', value:'Kaldheim-2'},
 	{name:'Nonlegendary Kaldheim (KHM)', value:'KaldheimNonleg'},
 	{name:'Commander Legends (CMR)', value:'CommanderLegends'},
@@ -82,14 +77,14 @@ loadFramePacks([
 	{name:'Etched (Snow)', value:'EtchedSnow'},
 	{name:'Legend Crowns (Etched)', value:'LegendCrownsEtched'},
 	{name:'Inner Crowns (Etched)', value:'InnerCrownsEtched'},
-
+	
 	{name:'Universes Beyond', value:'disabled'},
 	{name:'Universes Beyond', value:'UB'},
 	{name:'Universes Beyond (Full art)', value:'UBFull'},
 	{name:'Universes Beyond (Extended art)', value:'UBExtendedArt'},
 	{name:'Legend Crowns (Universes Beyond)', value:'UBLegendCrowns'},
 	{name:'Floating Legend Crowns (Universes Beyond)', value:'UBLegendCrownsFloating'},
-
+	
 	{name:'Masterpieces/Other', value:'disabled'},
 	{name:'Phyrexian', value:'Praetors'},
 	{name:'ZNR Expeditions (2020)', value:'ExpeditionZNR-1'},
