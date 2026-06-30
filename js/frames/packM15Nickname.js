@@ -9,7 +9,7 @@ var bounds3 = {x:0.0494, y:0.0405, width:0.9014, height:0.1053};
 availableFrames = [
 	{name:'White Frame', src:'/img/frames/m15/nickname/m15NicknameFrameW.png', masks:masks},
 	{name:'Blue Frame', src:'/img/frames/m15/nickname/m15NicknameFrameU.png', masks:masks},
-	{name:'Black Frame', src:'/img/frames/m15/nickname/m\15NicknameFrameB.png', masks:masks},
+	{name:'Black Frame', src:'/img/frames/m15/nickname/m15NicknameFrameB.png', masks:masks},
 	{name:'Red Frame', src:'/img/frames/m15/nickname/m15NicknameFrameR.png', masks:masks},
 	{name:'Green Frame', src:'/img/frames/m15/nickname/m15NicknameFrameG.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/m15/nickname/m15NicknameFrameM.png', masks:masks},
