@@ -1771,6 +1771,61 @@ function autoFrame() {
 	}
 }
 
+// Import-only polish: long auto-imported card names / type lines would otherwise overlap the
+// mana cost or run under the set symbol (this is stock frame behaviour — the text boxes are as
+// wide as on the "Regular" frame). Here we narrow the relevant text BOXES so writeText's
+// shrink-to-fit makes the text smaller (it is never clipped) instead of overlapping its neighbour.
+// Content-aware: space is reserved only when a mana cost / set symbol is actually present, and
+// sized to how much room they actually take. Widths are clamped from a stored default so repeated
+// imports don't compound. Applies only during Import Deck generation (manual editing is untouched).
+function clampImportTextWidths(topNameKey) {
+	if (typeof deckGenerationState === 'undefined' || !deckGenerationState.isGenerating) { return; }
+	if (!card.text) { return; }
+	var aspect = card.height / card.width; // px height / px width (~1.4); converts a height-sized square to width units
+
+	// Top name (nickname or title) vs. mana cost (mana is right-aligned to mana.x + mana.width)
+	var nameField = card.text[topNameKey];
+	var mana = card.text.mana;
+	if (nameField) {
+		if (nameField._importFullWidth == null) { nameField._importFullWidth = nameField.width; }
+		var fullW = nameField._importFullWidth;
+		var manaSymbols = (mana && mana.text) ? (mana.text.match(/{[^}]+}/g) || []) : [];
+		if (manaSymbols.length > 0) {
+			var symbolW = (mana.size || 0.043) * aspect; // one pip ≈ a square of height mana.size
+			var manaRight = (mana.x || 0) + (mana.width || 1);
+			var reserve = manaSymbols.length * symbolW + 0.012; // pips + a small gap
+			var avail = (manaRight - reserve) - (nameField.x || 0);
+			nameField.width = Math.max(0.2, Math.min(fullW, avail));
+		} else {
+			nameField.width = fullW; // no mana cost → full width available
+		}
+	}
+
+	// Type line vs. set symbol (optional). Set symbol ≈ a square fit to setSymbolBounds.height.
+	var typeField = card.text.type;
+	var ssb = card.setSymbolBounds;
+	var setCodeEl = document.querySelector('#set-symbol-code');
+	if (typeField) {
+		if (typeField._importFullWidth == null) { typeField._importFullWidth = typeField.width; }
+		var fullTW = typeField._importFullWidth;
+		if (ssb && setCodeEl && setCodeEl.value) {
+			var symW = (ssb.height || 0.04) * aspect;
+			var ssLeft;
+			if (ssb.horizontal === 'right') { ssLeft = (ssb.x || 1) - symW; }
+			else if (ssb.horizontal === 'center') { ssLeft = (ssb.x || 1) - symW / 2; }
+			else { ssLeft = (ssb.x || 1); }
+			var availT = ssLeft - (typeField.x || 0) - 0.008;
+			typeField.width = Math.max(0.2, Math.min(fullTW, availT));
+		} else {
+			typeField.width = fullTW; // no set symbol → full width available
+		}
+	}
+
+	// Re-render the text with the adjusted widths (debounced). Needed for the Bloomburrow path,
+	// whose earlier scheduled render may have already fired before these width changes.
+	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
+}
+
 // Assembles a nickname-style frame (one with separate Nickname + Title text fields).
 // Imitates autoBloomburrowFrame: snapshot text, apply pack layout, restore text, set nickname,
 // build frame layers from availableFrames by element name.
@@ -1819,6 +1874,9 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 	if (card.text && card.text.nickname) {
 		card.text.nickname.text = nickname || (card.text.title ? card.text.title.text : '');
 	}
+
+	// Import-only: keep the nickname clear of the mana cost and the type line clear of the set symbol
+	clampImportTextWidths('nickname');
 
 	// Preserve extension/holo frames (same pattern as autoBloomburrowFrame)
 	var preservedFrames = card.frames.filter(frame =>
@@ -1905,6 +1963,9 @@ async function autoBloomburrowFrame(colors, mana_cost, type_line, power) {
 	card.frames.reverse();
 	await card.frames.forEach(item => addFrame([], item));
 	card.frames.reverse();
+
+	// Import-only: keep the title clear of the mana cost and the type line clear of the set symbol
+	clampImportTextWidths('title');
 }
 
 function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = false, hasPT = false) {
