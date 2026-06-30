@@ -236,3 +236,32 @@ particolari) → arricchire il `config` con flag/funzioni dedicate, sulla falsar
 
 Per i frame **senza** nickname si continua a usare il path standard (`getFrameTypeConfig` +
 `autoFrameUnified`) o un handler dedicato come Bloomburrow.
+
+## 9. Insidie scoperte in fase di implementazione (post-spec)
+
+- **Maschere degli element del pack** (`drawFrames`): le `masks` di un element nel pack sono la
+  lista delle maschere *selezionabili* (l'utente ne sceglie una). `drawFrames` però applica
+  **tutte** le maschere dell'array con `globalCompositeOperation = 'source-in'` ⇒ **intersezione**:
+  clonando l'element con la sua lista completa (es. base frame `[Pinline, Type, Rules, Border]`)
+  il layer diventa invisibile. Quando si assembla per programma, **azzerare `masks`** sui cloni
+  (i PNG sono immagini standalone già sagomate, da mostrare intere ai loro `bounds`), come fa
+  `makeBloomburrowFrameByLetter`.
+- **Z-order dei layer**: `card.frames[0]` è disegnato per ultimo (in cima); `drawFrames` fa
+  `card.frames.slice().reverse()`. Quindi nell'ordine di push il **base frame va per ultimo**
+  (sta in fondo) e Crown/Title + P/T vanno **prima** (in cima). Altrimenti il bordo inferiore
+  opaco del base frame copre il riquadro P/T.
+- **Re-render del testo**: il testo principale è disegnato da `drawText`, schedulato (debounce
+  500ms) da `drawTextBuffer`. `loadTextOptions` (quindi il `loadFrameVersion` del pack) lo
+  schedula; le modifiche sincrone fatte dopo (valori, width) vengono incluse quando il timer
+  scatta. Se si modificano i campi testo fuori da quel path (es. Bloomburrow non chiama
+  `loadTextOptions`), chiamare esplicitamente `drawTextBuffer()`.
+- **Overlap testo (mana / set symbol)**: NON è specifico dei frame nickname — le bounds di
+  `title`/`type` (width `0.8292`) e `mana` (`0.9292`) sono **identiche** al frame "Regular", e il
+  set symbol è sempre disegnato in `drawCard` **sopra** il testo. Per i frame con assemblaggio
+  automatico via import è stato aggiunto `clampImportTextWidths(topNameKey)` (in `autoFrame.js`):
+  **solo durante Import Deck** (`deckGenerationState.isGenerating`) restringe il box del nome in
+  alto e del type per far scattare lo shrink-to-fit (il testo non viene mai tagliato), in modo
+  content-aware (riserva spazio solo se mana/set symbol presenti) e clampando da una width di
+  default memorizzata (`_importFullWidth`) per non accumulare tra carte. L'editing manuale resta
+  invariato. Va richiamato da ogni handler di assemblaggio import (nickname → `'nickname'`,
+  Bloomburrow → `'title'`).
