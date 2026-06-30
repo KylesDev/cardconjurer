@@ -106,7 +106,9 @@
 					<h3 class='selectable readable-background' onclick='toggleCreatorTabs(event, "watermark")'>Watermark</h3>
 					<h3 class='selectable readable-background' onclick='toggleCreatorTabs(event, "bottomInfo")'>Collector</h3>
 					<h3 class='selectable readable-background' onclick='toggleCreatorTabs(event, "import")'>Import/Save</h3>
+					<!-- FORK: import-deck START -->
 					<h3 class='selectable readable-background' onclick='toggleCreatorTabs(event, "importDeck")'>Import Deck</h3>
+					<!-- FORK: import-deck END -->
 					<h3 class='selectable readable-background' onclick='toggleCreatorTabs(event, "tutorial"); loadTutorialVideo();'>Tutorial</h3>
 				</div>
 				<div id='creator-menu-sections' class='margin-bottom'>
@@ -738,6 +740,7 @@
 							</div>
 						</div>
 					</div>
+					<!-- FORK: import-deck START -->
 					<div id='creator-menu-importDeck' class='hidden'>
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Paste your decklist below</h5>
@@ -841,6 +844,7 @@
 							</div>
 						</div>
 					</div>
+					<!-- FORK: import-deck END -->
 					<div id='creator-menu-tutorial' class='hidden'>
 						<!-- <div class='padding readable-background margin-bottom'>
 							<h5 class='padding input-description'>This video is currently outdated, but still reflects the general process for making cards</h5>
@@ -890,11 +894,9 @@
 							<option value="Circuit">Circuit</option>
 							<option value="M15Eighth">M15-Eighth</option>
 							<option value="M15EighthUB">M15-Eighth Universes Beyond</option>
+							<!-- FORK: import-deck START (Bloomburrow option stays here; M15Nickname/IkoNicknameShort/PromoRegular-1/IkoShort injected by js/fork/deckImport.js) -->
 							<option value="BloomburrowBorderlessColored">Bloomburrow Borderless (Colored)</option>
-							<option value="M15Nickname">Nickname Frames</option>
-							<option value="IkoNicknameShort">Nickname Frames (Extra Short)</option>
-							<option value="PromoRegular-1">Borderless Frames</option>
-							<option value="IkoShort">Borderless Frames (Extra Short)</option>
+							<!-- FORK: import-deck END -->
 						</select>
 
 						
@@ -1100,5 +1102,7 @@
 	<script src='/js/jszip.min.js'></script>
 	<script defer src='/js/autoFrame.js'></script>
 	<script defer src='/js/creator-23.js'></script>
+	<!-- FORK: import-deck script -->
+	<script defer src='/js/fork/deckImport.js'></script>
 	<script defer src='/js/frameSearch.js'></script>
 <!-- END OF CONTENT -->

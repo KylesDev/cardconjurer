@@ -22,21 +22,9 @@
  */
 
 
-// ============================================================================
-// ELEMENT-NAMED FRAME REGISTRY (Import Deck)
-// ============================================================================
-// Extendable registry of frame types assembled by element name (autoElementFrame).
-// Key = dropdown value = pack<Value>.js filename. Flags:
-//   nickname     – pack has a separate Nickname text field
-//   crown        – pack has a '<Color> Crown' element for Legendary cards
-//   titleElement – pack has a '<Color> Title' element for non-Legendary cards
-// See spec §8 for how to add more.
-const IMPORT_FRAME_CONFIG = {
-	'M15Nickname':      { pack: 'M15Nickname',      nickname: true,  crown: true,  titleElement: true  },
-	'IkoNicknameShort': { pack: 'IkoNicknameShort', nickname: true,  crown: true,  titleElement: true  },
-	'PromoRegular-1':   { pack: 'PromoRegular-1',   nickname: false, crown: false, titleElement: false },
-	'IkoShort':         { pack: 'IkoShort',         nickname: false, crown: false, titleElement: false }
-};
+// FORK: IMPORT_FRAME_CONFIG, autoElementFrame, clampImportTextWidths,
+// autoBloomburrowFrame, makeBloomburrowFrameByLetter — moved to js/fork/deckImport.js.
+// The dispatch hooks below reference them via window.* for load-order safety.
 
 // ============================================================================
 // SECTION 1: FRAME TYPE CONFIGURATION
@@ -1757,17 +1745,23 @@ function autoFrame() {
 			autoFramePack = packFrame;
 		}
 	} else if (frame == 'BloomburrowBorderlessColored') {
-		autoBloomburrowFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		// FORK: import-deck frame dispatch — autoBloomburrowFrame defined in js/fork/deckImport.js
+		if (window.autoBloomburrowFrame) {
+			window.autoBloomburrowFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		}
 		if (autoFramePack != frame) {
 			loadScript('/js/frames/pack' + frame + '.js');
 			autoFramePack = frame;
 		}
-	} else if (IMPORT_FRAME_CONFIG[frame]) {
-		autoElementFrame(
-			IMPORT_FRAME_CONFIG[frame], colors,
-			card.text.mana.text, card.text.type.text, card.text.pt.text,
-			window.deckImportNickname || ''
-		);
+	} else if (window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[frame]) {
+		// FORK: import-deck frame dispatch — IMPORT_FRAME_CONFIG and autoElementFrame defined in js/fork/deckImport.js
+		if (window.autoElementFrame) {
+			window.autoElementFrame(
+				window.IMPORT_FRAME_CONFIG[frame], colors,
+				card.text.mana.text, card.text.type.text, card.text.pt.text,
+				window.deckImportNickname || ''
+			);
+		}
 		if (autoFramePack != frame) {
 			loadScript('/js/frames/pack' + frame + '.js');
 			autoFramePack = frame;
@@ -1775,302 +1769,5 @@ function autoFrame() {
 	}
 }
 
-// Import-only polish: long auto-imported card names / type lines would otherwise overlap the
-// mana cost or run under the set symbol (this is stock frame behaviour — the text boxes are as
-// wide as on the "Regular" frame). Here we narrow the relevant text BOXES so writeText's
-// shrink-to-fit makes the text smaller (it is never clipped) instead of overlapping its neighbour.
-// Content-aware: space is reserved only when a mana cost / set symbol is actually present, and
-// sized to how much room they actually take. Widths are clamped from a stored default so repeated
-// imports don't compound. Applies only during Import Deck generation (manual editing is untouched).
-function clampImportTextWidths(topNameKey) {
-	if (typeof deckGenerationState === 'undefined' || !deckGenerationState.isGenerating) { return; }
-	if (!card.text) { return; }
-	var aspect = card.height / card.width; // px height / px width (~1.4); converts a height-sized square to width units
-
-	// Top name (nickname or title) vs. mana cost (mana is right-aligned to mana.x + mana.width)
-	var nameField = card.text[topNameKey];
-	var mana = card.text.mana;
-	if (nameField) {
-		if (nameField._importFullWidth == null) { nameField._importFullWidth = nameField.width; }
-		var fullW = nameField._importFullWidth;
-		var manaSymbols = (mana && mana.text) ? (mana.text.match(/{[^}]+}/g) || []) : [];
-		if (manaSymbols.length > 0) {
-			var symbolW = (mana.size || 0.043) * aspect; // one pip ≈ a square of height mana.size
-			var manaRight = (mana.x || 0) + (mana.width || 1);
-			var reserve = manaSymbols.length * symbolW + 0.012; // pips + a small gap
-			var avail = (manaRight - reserve) - (nameField.x || 0);
-			nameField.width = Math.max(0.2, Math.min(fullW, avail));
-		} else {
-			nameField.width = fullW; // no mana cost → full width available
-		}
-	}
-
-	// Type line vs. set symbol (optional). The symbol is scaled to fit setSymbolBounds and can
-	// occupy up to the full bounds WIDTH, so reserve the whole bounds width (the symbol's left
-	// edge can reach setSymbolBounds.x - width) to guarantee the type clears it regardless of the
-	// symbol's aspect ratio — a height-based square estimate under-reserved for wider symbols.
-	var typeField = card.text.type;
-	var ssb = card.setSymbolBounds;
-	var setCodeEl = document.querySelector('#set-symbol-code');
-	// A set symbol is shown if a code is entered OR a (non-blank) symbol image is loaded — the
-	// latter catches CardConjurer's default symbol, which renders even with an empty code field.
-	var hasSetSymbol = (setCodeEl && setCodeEl.value) ||
-		(card.setSymbolSource && card.setSymbolSource.indexOf('/img/blank.png') === -1);
-	if (typeField) {
-		if (typeField._importFullWidth == null) { typeField._importFullWidth = typeField.width; }
-		var fullTW = typeField._importFullWidth;
-		if (ssb && hasSetSymbol) {
-			var reserveW = ssb.width || ((ssb.height || 0.04) * aspect);
-			var ssLeft;
-			if (ssb.horizontal === 'right') { ssLeft = (ssb.x || 1) - reserveW; }
-			else if (ssb.horizontal === 'center') { ssLeft = (ssb.x || 1) - reserveW / 2; }
-			else { ssLeft = (ssb.x || 1); }
-			var availT = ssLeft - (typeField.x || 0) - 0.008;
-			typeField.width = Math.max(0.2, Math.min(fullTW, availT));
-		} else {
-			typeField.width = fullTW; // no set symbol → full width available
-		}
-	}
-
-	// Re-render the text with the adjusted widths (debounced). Needed for the Bloomburrow path,
-	// whose earlier scheduled render may have already fired before these width changes.
-	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
-}
-
-// Assembles a frame whose layers are picked by element name from the pack's availableFrames.
-// Imitates autoBloomburrowFrame: snapshot text, apply the pack's text layout, restore text,
-// (optionally) set the nickname, then build base + Crown/Title + P/T layers. Config flags:
-//   nickname     – pack has a separate Nickname text field (set it; clamp the nickname box)
-//   crown        – pack has a '<Color> Crown' element to add for Legendary cards
-//   titleElement – pack has a '<Color> Title' element to add for non-Legendary cards
-// Borderless frames set all three false (just base + P/T, title in the normal title field).
-async function autoElementFrame(config, colors, mana_cost, type_line, power, nickname) {
-	// Map color letter → full color name used in element names
-	const colorNameMap = {
-		'W': 'White', 'U': 'Blue', 'B': 'Black', 'R': 'Red', 'G': 'Green',
-		'M': 'Multicolored', 'A': 'Artifact', 'L': 'Land', 'C': 'Colorless',
-		'V': 'Artifact'  // Vehicle → use Artifact frame
-	};
-	// For PT the pack has no "Land" variant; use Colorless instead
-	const ptColorNameMap = Object.assign({}, colorNameMap, { 'L': 'Colorless' });
-
-	// Determine color letter using cardFrameProperties
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var colorLetter = properties.frame ? properties.frame.toUpperCase() : 'A';
-	var colorName = colorNameMap[colorLetter] || 'Artifact';
-	var ptColorName = ptColorNameMap[colorLetter] || 'Colorless';
-
-	// Snapshot text values set by importCardForDeck before the layout is overwritten
-	var snapshot = {};
-	if (card.text) {
-		Object.keys(card.text).forEach(key => {
-			snapshot[key] = card.text[key].text;
-		});
-	}
-
-	// Apply the pack's nickname text layout (creates the nickname field, repositions title, etc.)
-	// The pack must be loaded before this is called (preloaded in generateDeck/generateDeckFromZip).
-	var loadBtn = document.querySelector('#loadFrameVersion');
-	if (loadBtn && typeof loadBtn.onclick === 'function') {
-		await loadBtn.onclick();
-	}
-
-	// Restore snapshotted text values (loadTextOptions preserves existing keys automatically,
-	// but an explicit restore ensures correctness even if the field names changed)
-	if (card.text) {
-		Object.keys(snapshot).forEach(key => {
-			if (card.text[key]) {
-				card.text[key].text = snapshot[key];
-			}
-		});
-	}
-
-	// Set the nickname field (nickname frames only): provided nickname or fall back to the title
-	if (config.nickname && card.text && card.text.nickname) {
-		card.text.nickname.text = nickname || (card.text.title ? card.text.title.text : '');
-	}
-
-	// Import-only: keep the top name clear of the mana cost and the type line clear of the set
-	// symbol. The big top name is the nickname on nickname frames, otherwise the title.
-	clampImportTextWidths(config.nickname ? 'nickname' : 'title');
-
-	// Preserve extension/holo frames (same pattern as autoBloomburrowFrame)
-	var preservedFrames = card.frames.filter(frame =>
-		frame.name.includes('Extension') ||
-		frame.name.includes('Gray Holo Stamp') ||
-		frame.name.includes('Gold Holo Stamp')
-	);
-
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	// Helper: find a frame element by name in availableFrames and clone it.
-	// The pack's `masks` array on each element is the list of SELECTABLE masks
-	// (meant for the user to pick one); drawFrames() applies every mask in the
-	// array via 'source-in', i.e. as an intersection, which for the base frame's
-	// [Pinline, Type, Rules, Border] is ~empty and masks the whole layer out.
-	// These nickname PNGs are standalone, already-shaped images shown whole at
-	// their bounds, so we drop the masks entirely (same as autoBloomburrowFrame).
-	function findFrameElement(name) {
-		if (!availableFrames) return null;
-		var el = availableFrames.find(f => f.name === name);
-		if (!el) return null;
-		var clone = JSON.parse(JSON.stringify(el));
-		clone.masks = [];
-		return clone;
-	}
-
-	// Push order = z-order top→bottom (card.frames[0] is drawn last/on top), matching
-	// autoBloomburrowFrame: the base frame is pushed LAST so it sits at the bottom, and
-	// the Crown/Title and Power/Toughness layers sit ON TOP of it (otherwise the base
-	// frame's opaque bottom border would hide the P/T box).
-	var newFrames = [...preservedFrames];
-
-	// 1. Power/Toughness (topmost; only if card has P/T)
-	if (power) {
-		var ptEl = findFrameElement(ptColorName + ' Power/Toughness');
-		if (ptEl) newFrames.push(ptEl);
-	}
-
-	// 2. Crown (Legendary) or Title element, when the pack provides them
-	var isLegendary = type_line.toLowerCase().includes('legendary');
-	if (config.crown && isLegendary) {
-		var crownEl = findFrameElement(colorName + ' Crown');
-		if (crownEl) newFrames.push(crownEl);
-	} else if (config.titleElement) {
-		var titleEl = findFrameElement(colorName + ' Title');
-		if (titleEl) newFrames.push(titleEl);
-	}
-
-	// 3. Base frame (bottommost)
-	var baseEl = findFrameElement(colorName + ' Frame');
-	if (baseEl) newFrames.push(baseEl);
-
-	card.frames = newFrames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-
-async function autoBloomburrowFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
-
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-
-	var hasPT = properties.pt != null;
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (properties.pinlineRight) {
-			frames.push(makeBloomburrowFrameByLetter(properties.pinlineRight, 'Crown', true, hasPT));
-		}
-		frames.push(makeBloomburrowFrameByLetter(properties.pinline, "Crown", false, hasPT));
-	}
-	if (!(properties.frame == 'V' && properties.pinline == 'A')) {
-		if (properties.pinlineRight) {
-			frames.push(makeBloomburrowFrameByLetter(properties.pinlineRight, 'Pinline', true, hasPT));
-		}
-		frames.push(makeBloomburrowFrameByLetter(properties.pinline, 'Pinline', false, hasPT));
-	}
-	frames.push(makeBloomburrowFrameByLetter(properties.frame, null, false, hasPT));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-
-	// Bloomburrow frames darken the art behind the text, so the text must be white. This handler
-	// doesn't apply the pack's text layout (which sets white), so without this the M15-default
-	// black is used and the text is unreadable.
-	['title', 'type', 'rules', 'pt'].forEach(function(key) {
-		if (card.text && card.text[key]) { card.text[key].color = 'white'; }
-	});
-	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
-
-	// Import-only: keep the title clear of the mana cost and the type line clear of the set symbol
-	clampImportTextWidths('title');
-}
-
-function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = false, hasPT = false) {
-	letter = letter.toUpperCase();
-
-	if (letter == 'L') {
-		letter = 'C';
-	}
-
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White',
-		'UL': 'Blue',
-		'BL': 'Black',
-		'RL': 'Red',
-		'GL': 'Green',
-		'ML': 'Multicolored'
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legendary Accents',
-			'src': '/img/frames/custom/bloomburrowBorderlessColored/crown' + letter + '.png',
-			'masks': [],
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (hasPT) {
-		frameName = frameName + " Creature"
-	} else {
-		frameName = frameName + " Noncreature"
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + letter + '.png',
-	}
-
-	if (mask) {
-		if (mask == 'Pinline') {
-			frame.masks = [
-				{
-					'src': '/img/frames/custom/bloomburrowBorderlessColored/' + (hasPT ? 'creature' : 'noncreature') + mask + 'Mask.png',
-					'name': mask
-				}
-			]
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/custom/bloomburrowBorderlessColored/' + mask.toLowerCase() + 'Mask.png',
-					'name': mask
-				}
-			]
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
+// FORK: clampImportTextWidths, autoElementFrame, autoBloomburrowFrame, makeBloomburrowFrameByLetter
+// moved to js/fork/deckImport.js
