@@ -742,12 +742,14 @@
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Paste your decklist below</h5>
 							<h5 class='padding margin-bottom input-description'>Format: {numberOfCopies} {cardName} (e.g., "1 Negate" or "15 Plains")</h5>
-							<textarea id='deck-list-input' class='input margin-bottom' placeholder='1 Negate&#10;1 Pilgrim&apos;s Eye&#10;15 Plains&#10;1 Port Town' rows='15'></textarea>
+							<h5 class='padding margin-bottom input-description'>Nickname frames: append the nickname in square brackets after the card name, e.g. "1 Llanowar Elves [Elf Bestie]". The card name still goes in the Title field (used for the Scryfall lookup); the bracketed text becomes the Nickname. Cards with no brackets fall back to using the card name as the nickname.</h5>
+							<textarea id='deck-list-input' class='input margin-bottom' placeholder='1 Negate&#10;1 Llanowar Elves [Elf Bestie]&#10;15 Plains&#10;1 Questing Beast [The Beast]' rows='15'></textarea>
 						</div>
 						<div class='readable-background margin-bottom padding'>
 							<h5 class='padding margin-bottom input-description'>Or upload a single image or ZIP file of card images</h5>
 							<h5 class='padding margin-bottom input-description'>For single images: filename should be the card name (e.g., "Forest.jpg", "Spider-Man 2099.png")</h5>
 							<h5 class='padding margin-bottom input-description'>For ZIP files: multiple copies can be indicated with _(number) suffix (e.g., "Plains_(2).png")</h5>
+							<h5 class='padding margin-bottom input-description'>Nickname frames: add the nickname in square brackets after the card name in the filename, e.g. "Llanowar Elves [Elf Bestie].png" or "Llanowar Elves [Elf Bestie]_(2).png". The card name is used for the Scryfall lookup and goes in the Title field; the bracketed text becomes the Nickname.</h5>
 							<div class='padding drop-area'>
 					            <h5 class='margin-bottom padding input-description'>Drag and drop single image (PNG/JPG) or ZIP file, or click to select</h5>
 					            <input id='deck-zip-input' type='file' accept='.zip,.png,.jpg,.jpeg' placeholder='Upload file' class='input' onchange='handleFileUpload(event);'>
@@ -776,11 +778,59 @@
 								<option value="M15Eighth">M15-Eighth</option>
 								<option value="M15EighthUB">M15-Eighth Universes Beyond</option>
 								<option value="BloomburrowBorderlessColored">Bloomburrow Borderless (Colored)</option>
+								<option value="M15Nickname">Nickname Frames</option>
+								<option value="IkoNicknameShort">Nickname Frames (Extra Short)</option>
+								<option value="PromoRegular-1">Borderless Frames</option>
+								<option value="IkoShort">Borderless Frames (Extra Short)</option>
 							</select>
 							<label class='checkbox-container input margin-bottom'>Import flavor text
 								<input id='importFlavorTextDeck' type='checkbox' checked>
 								<span class='checkmark'></span>
 							</label>
+							<label class='checkbox-container input margin-bottom'>Insert set symbol
+								<input id='importSetSymbolToggleDeck' type='checkbox' checked>
+								<span class='checkmark'></span>
+							</label>
+							<h5 class='padding margin-bottom input-description'>When on: if a code is entered below it is applied to every card, otherwise each card's own set is used (the rarity from each card is always kept). Turn it off to add no set symbol at all.</h5>
+							<input id='importSetSymbolCodeDeck' class='input margin-bottom' type='text' placeholder="Set symbol code (e.g. 'neo', 'mh3')">
+						</div>
+						<div class='readable-background margin-bottom padding'>
+							<h5 class='collapsible collapsed padding input-description' onclick='toggleCollapse(event);'>Collector info</h5>
+							<div class='padding'>
+								<label class='checkbox-container input margin-bottom'>Add collector info
+									<input id='deckCollectorToggle' type='checkbox'>
+									<span class='checkmark'></span>
+								</label>
+								<h5 class='margin-top margin-bottom input-description'>Uses the new (post-ONE) collector info style. Empty fields are left blank, like the Collector Info tab.</h5>
+								<label class='checkbox-container input margin-bottom'>Auto progressive card number
+									<input id='deckCollectorAutoNumber' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<input id='deckCollectorNumber' class='input margin-bottom' type='text' placeholder='Card number (used when auto is off)'>
+								<label class='checkbox-container input margin-bottom'>Rarity from each card
+									<input id='deckCollectorRarityFromCard' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<input id='deckCollectorRarity' class='input margin-bottom' type='text' placeholder='Rarity (used when off, e.g. C / U / R / M)'>
+								<label class='checkbox-container input margin-bottom'>Artist from each card
+									<input id='deckCollectorArtistFromCard' type='checkbox' checked>
+									<span class='checkmark'></span>
+								</label>
+								<h5 class='margin-top margin-bottom input-description'>Applied once to every card:</h5>
+								<div class='padding input-grid'>
+									<input id='deckCollectorSet' class='input' type='text' placeholder='Set (e.g. NEO)'>
+									<input id='deckCollectorLanguage' class='input' type='text' placeholder='Language (e.g. EN)'>
+									<input id='deckCollectorArtist' class='input' type='text' placeholder='Artist (when off above)'>
+								</div>
+								<div class='padding input-grid'>
+									<input id='deckCollectorYear' class='input' type='number' placeholder='Year'>
+									<input id='deckCollectorNote' class='input' type='text' placeholder='Note'>
+								</div>
+								<div class='padding input-grid'>
+									<input id='deckCollectorNoteExtra1' class='input' type='text' placeholder='Extra Note 1'>
+									<input id='deckCollectorNoteExtra2' class='input' type='text' placeholder='Extra Note 2'>
+								</div>
+							</div>
 						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='padding margin-bottom input-description'>Generate and download all cards in the decklist</h5>
@@ -841,6 +891,10 @@
 							<option value="M15Eighth">M15-Eighth</option>
 							<option value="M15EighthUB">M15-Eighth Universes Beyond</option>
 							<option value="BloomburrowBorderlessColored">Bloomburrow Borderless (Colored)</option>
+							<option value="M15Nickname">Nickname Frames</option>
+							<option value="IkoNicknameShort">Nickname Frames (Extra Short)</option>
+							<option value="PromoRegular-1">Borderless Frames</option>
+							<option value="IkoShort">Borderless Frames (Extra Short)</option>
 						</select>
 
 						

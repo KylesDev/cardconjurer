@@ -5069,6 +5069,15 @@ const CANVAS_RENDER_TIMEOUT_MS = 1000; // Time to wait for canvas rendering to c
 const ART_LOAD_TIMEOUT_MS = 3000; // Time to wait for art image to load
 const ART_LOAD_POLL_INTERVAL_MS = 250; // Interval for polling art load status
 
+// Splits a raw card name into { name, nickname }.
+// Supports the unified [Nickname] bracket syntax: "Card Name [Nickname]" → { name, nickname }.
+// Without brackets, nickname is '' (no-op for non-nickname frames).
+function splitNickname(rawName) {
+	const m = rawName.match(/^(.*?)\s*\[(.+)\]\s*$/);
+	return m ? { name: m[1].trim(), nickname: m[2].trim() }
+	         : { name: rawName.trim(), nickname: '' };
+}
+
 function parseDeckList(deckListText) {
 	const lines = deckListText.trim().split('\n');
 	const cards = [];
@@ -5077,15 +5086,15 @@ function parseDeckList(deckListText) {
 		const trimmedLine = line.trim();
 		if (!trimmedLine) continue;
 
-		// Parse format: {numberOfCopies} {cardName}
+		// Parse format: {numberOfCopies} {cardName [optionalNickname]}
 		const match = trimmedLine.match(/^(\d+)\s+(.+)$/);
 		if (match) {
 			const copies = parseInt(match[1], 10);
-			const cardName = match[2].trim();
+			const { name, nickname } = splitNickname(match[2].trim());
 
 			// Validate number of copies
 			if (copies >= 1 && copies <= 100) {
-				cards.push({ name: cardName, copies: copies });
+				cards.push({ name, nickname, copies });
 			} else {
 				console.warn(`Invalid number of copies for card: ${line}`);
 			}
@@ -5162,6 +5171,12 @@ async function generateDeck() {
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
 
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
+	}
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
@@ -5184,6 +5199,8 @@ async function generateDeck() {
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
+				applyDeckSetSymbolOverride();
+				await applyDeckCollectorInfo(cards.indexOf(cardEntry) + 1);
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 
@@ -5193,7 +5210,9 @@ async function generateDeck() {
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					window.deckImportNickname = cardEntry.nickname || '';
 					autoFrame();
+					window.deckImportNickname = '';
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
@@ -5287,6 +5306,7 @@ async function generateSingleCard() {
 	}
 
 	const cardName = singleImageUpload.cardName;
+	const cardNickname = singleImageUpload.nickname || '';
 
 	// Ask user for confirmation
 	const confirmed = confirm(
@@ -5315,6 +5335,12 @@ async function generateSingleCard() {
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
 
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
+	}
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
@@ -5332,6 +5358,8 @@ async function generateSingleCard() {
 
 		// Import the card from Scryfall
 		await importCardForDeck(cardName);
+		applyDeckSetSymbolOverride();
+		await applyDeckCollectorInfo(1);
 
 		progressText.textContent = `Loading: ${cardName}...`;
 		progressBar.value = 40;
@@ -5377,7 +5405,9 @@ async function generateSingleCard() {
 
 		// Trigger autoframe if enabled
 		if (selectedFrameStyle !== 'false') {
+			window.deckImportNickname = cardNickname;
 			autoFrame();
+			window.deckImportNickname = '';
 			// Wait for autoframe to complete - use longer timeout for complex frames
 			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
 		}
@@ -5458,6 +5488,98 @@ function fetchScryfallCardByExactName(cardName) {
 			reject(new Error(`Scryfall API request failed: ${error.message}`));
 		}
 	});
+}
+
+// Import Deck set symbol handling. Call right after importCardForDeck, before the card is rendered.
+// Driven by the "Insert set symbol" toggle:
+//   - OFF: no set symbol at all (blank it out).
+//   - ON + code entered: that code on every card.
+//   - ON + no code: each card's OWN Scryfall set code.
+// This also avoids CardConjurer's 'cmd' default: changeCardIndex leaves #set-symbol-code unset on
+// import (its code assignment is commented out) yet still calls fetchSetSymbol(), which falls back
+// to 'cmd' — so without this the wrong symbol shows and the empty code field hides it from the
+// type-line clamp. The per-card rarity set by changeCardIndex is always kept.
+function applyDeckSetSymbolOverride() {
+	const insert = document.querySelector('#importSetSymbolToggleDeck');
+	const codeEl = document.querySelector('#importSetSymbolCodeDeck');
+
+	// Toggle off → no set symbol: clear the code and blank the symbol image.
+	if (!insert || !insert.checked) {
+		document.querySelector('#set-symbol-code').value = '';
+		setSymbol.src = blank.src;
+		card.setSymbolSource = blank.src;
+		return;
+	}
+
+	let code = '';
+	if (codeEl && codeEl.value.trim()) {
+		code = codeEl.value.trim(); // explicit code for every card
+	} else if (!document.querySelector('#lockSetSymbolCode').checked) {
+		// Use the imported card's own set code instead of the 'cmd' default.
+		try {
+			const idx = document.querySelector('#import-index').value || 0;
+			const c = (typeof scryfallCard !== 'undefined' && scryfallCard) ? scryfallCard[idx] : null;
+			if (c && c.set) { code = c.set; }
+		} catch (e) { /* leave code empty */ }
+	}
+	if (code) {
+		document.querySelector('#set-symbol-code').value = code;
+		fetchSetSymbol(); // re-fetches with this code + the per-card rarity
+	}
+}
+
+// Import Deck collector info. Call right after importCardForDeck (await it), before rendering.
+// When the "Add collector info" toggle is on, forces the new (post-ONE) style + shows collector
+// info, then fills the #info-* fields used by the render: card number (auto-progressive or the
+// entered value), rarity (from each card or the entered value), artist (from each card or the
+// entered value), and the uniform set/language/year/notes. Empty fields are left blank.
+// entryNumber is the 1-based position used for the auto-progressive card number.
+async function applyDeckCollectorInfo(entryNumber) {
+	const enable = document.querySelector('#deckCollectorToggle');
+	if (!enable || !enable.checked) { return; }
+
+	const card0 = (() => {
+		try {
+			const idx = document.querySelector('#import-index').value || 0;
+			return (typeof scryfallCard !== 'undefined' && scryfallCard) ? scryfallCard[idx] : null;
+		} catch (e) { return null; }
+	})();
+	const val = id => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+
+	// Force the new (post-ONE) collector style and make collector info visible.
+	document.querySelector('#enableNewCollectorStyle').checked = true;
+	document.querySelector('#enableCollectorInfo').checked = true;
+	localStorage.setItem('enableNewCollectorStyle', 'true');
+	localStorage.setItem('enableCollectorInfo', 'true');
+
+	// Card number: auto-progressive (zero-padded) or the entered value.
+	const autoNum = document.querySelector('#deckCollectorAutoNumber');
+	document.querySelector('#info-number').value =
+		(autoNum && autoNum.checked) ? String(entryNumber).padStart(3, '0') : val('#deckCollectorNumber');
+
+	// Rarity: from the card (first letter, uppercase) or the entered value.
+	const rarFromCard = document.querySelector('#deckCollectorRarityFromCard');
+	document.querySelector('#info-rarity').value =
+		(rarFromCard && rarFromCard.checked) ? (card0 && card0.rarity ? card0.rarity.charAt(0).toUpperCase() : '')
+		                                     : val('#deckCollectorRarity');
+
+	// Artist: from the card or the entered value.
+	const artFromCard = document.querySelector('#deckCollectorArtistFromCard');
+	document.querySelector('#info-artist').value =
+		(artFromCard && artFromCard.checked) ? (card0 && card0.artist ? card0.artist : '')
+		                                     : val('#deckCollectorArtist');
+
+	// Uniform fields (left blank when empty).
+	document.querySelector('#info-set').value = val('#deckCollectorSet');
+	document.querySelector('#info-language').value = val('#deckCollectorLanguage');
+	document.querySelector('#info-year').value = val('#deckCollectorYear');
+	document.querySelector('#info-note').value = val('#deckCollectorNote');
+	document.querySelector('#info-note-extra-1').value = val('#deckCollectorNoteExtra1');
+	document.querySelector('#info-note-extra-2').value = val('#deckCollectorNoteExtra2');
+
+	// Rebuild the bottom-info layout for the new style, then render with the values above.
+	await setBottomInfoStyle();
+	bottomInfoEdited();
 }
 
 function importCardForDeck(cardName) {
@@ -5622,12 +5744,13 @@ async function handleSingleImageUpload(event) {
 		// Clear any existing uploads
 		clearUploadedFiles();
 
-		const cardName = parseImageFilename(file.name);
+		const { name: cardName, nickname: cardNickname } = parseImageFilename(file.name);
 		const imageUrl = URL.createObjectURL(file);
 
 		// Store single image upload
 		singleImageUpload = {
 			cardName: cardName,
+			nickname: cardNickname,
 			imageUrl: imageUrl,
 			fileName: file.name
 		};
@@ -5678,15 +5801,15 @@ async function handleZipUpload(event) {
 
 		// Process each image
 		for (const { fileName, zipEntry } of imageFiles) {
-			const cardName = parseImageFilename(fileName);
+			const { name: cardName, nickname: cardNickname } = parseImageFilename(fileName);
 			const blob = await zipEntry.async('blob');
 			const imageUrl = URL.createObjectURL(blob);
 
-			// Store image URL by card name
+			// Store image URL and nickname by card name
 			if (!zipCardImages[cardName]) {
-				zipCardImages[cardName] = [];
+				zipCardImages[cardName] = { nickname: cardNickname, urls: [] };
 			}
-			zipCardImages[cardName].push(imageUrl);
+			zipCardImages[cardName].urls.push(imageUrl);
 		}
 
 		notify(`Loaded ${imageFiles.length} image(s) from ZIP for ${Object.keys(zipCardImages).length} unique card(s).`, 3);
@@ -5719,7 +5842,7 @@ function clearUploadedFiles() {
 function clearZipImages() {
 	// Release object URLs to free memory
 	for (const cardName in zipCardImages) {
-		for (const url of zipCardImages[cardName]) {
+		for (const url of zipCardImages[cardName].urls) {
 			URL.revokeObjectURL(url);
 		}
 	}
@@ -5746,17 +5869,23 @@ function clearUploadedFilesUI() {
 	notify('Uploaded files cleared.', 2);
 }
 
+// Returns { name, nickname } from a filename like "Sol Ring [Anello]_(2).png".
+// Steps: strip extension → strip copy suffix → splitNickname → replace _ with spaces on both parts.
 function parseImageFilename(filename) {
 	// Remove file extension
-	let name = filename.substring(0, filename.lastIndexOf('.'));
+	let raw = filename.substring(0, filename.lastIndexOf('.'));
 
 	// Remove copy number suffix like _(2), _(3), etc.
-	name = name.replace(/_\(\d+\)$/, '');
+	raw = raw.replace(/_\(\d+\)$/, '');
 
-	// Replace underscores with spaces
-	name = name.replace(/_/g, ' ');
+	// Split into name and optional nickname using bracket syntax
+	let { name, nickname } = splitNickname(raw);
 
-	return name.trim();
+	// Replace underscores with spaces in both parts
+	name = name.replace(/_/g, ' ').trim();
+	nickname = nickname.replace(/_/g, ' ').trim();
+
+	return { name, nickname };
 }
 
 async function generateDeckFromZip() {
@@ -5773,15 +5902,17 @@ async function generateDeckFromZip() {
 	// Create card list from ZIP images
 	const cards = [];
 
-	for (const [cardName, images] of Object.entries(zipCardImages)) {
+	for (const [cardName, cardData] of Object.entries(zipCardImages)) {
+		const { nickname, urls } = cardData;
 		// Each image represents one copy
-		for (let i = 0; i < images.length; i++) {
+		for (let i = 0; i < urls.length; i++) {
 			cards.push({
 				name: cardName,
+				nickname: nickname,
 				copies: 1,
-				imageUrl: images[i],
+				imageUrl: urls[i],
 				copyNumber: i + 1,  // Track which copy this is (1-indexed)
-				totalCopies: images.length  // Total copies of this card
+				totalCopies: urls.length  // Total copies of this card
 			});
 		}
 	}
@@ -5819,6 +5950,12 @@ async function generateDeckFromZip() {
 		localStorage.setItem('autoFrame', selectedFrameStyle);
 	}
 
+	// Preload nickname frame pack before the loop to avoid async-timing issues (spec §6)
+	if (typeof IMPORT_FRAME_CONFIG !== 'undefined' && IMPORT_FRAME_CONFIG[selectedFrameStyle]) {
+		loadScript('/js/frames/pack' + selectedFrameStyle + '.js');
+		await new Promise(resolve => setTimeout(resolve, 800));
+	}
+
 	// Show progress UI
 	const progressDiv = document.querySelector('#deck-progress');
 	const progressText = document.querySelector('#deck-progress-text');
@@ -5844,6 +5981,8 @@ async function generateDeckFromZip() {
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
+				applyDeckSetSymbolOverride();
+				await applyDeckCollectorInfo(cards.indexOf(cardEntry) + 1);
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 
@@ -5858,7 +5997,9 @@ async function generateDeckFromZip() {
 				// Trigger autoframe if enabled
 				if (selectedFrameStyle !== 'false') {
 					progressText.textContent = `Framing: ${cardEntry.name}...`;
+					window.deckImportNickname = cardEntry.nickname || '';
 					autoFrame();
+					window.deckImportNickname = '';
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
