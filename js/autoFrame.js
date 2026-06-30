@@ -1980,6 +1980,14 @@ async function autoBloomburrowFrame(colors, mana_cost, type_line, power) {
 	await card.frames.forEach(item => addFrame([], item));
 	card.frames.reverse();
 
+	// Bloomburrow frames darken the art behind the text, so the text must be white. This handler
+	// doesn't apply the pack's text layout (which sets white), so without this the M15-default
+	// black is used and the text is unreadable.
+	['title', 'type', 'rules', 'pt'].forEach(function(key) {
+		if (card.text && card.text[key]) { card.text[key].color = 'white'; }
+	});
+	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
+
 	// Import-only: keep the title clear of the mana cost and the type line clear of the set symbol
 	clampImportTextWidths('title');
 }
