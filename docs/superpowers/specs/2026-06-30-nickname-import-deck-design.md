@@ -221,18 +221,22 @@ così durante il framing per-carta è già disponibile. Mantenere le attese esis
 
 ## 8. Estensione futura (note per chi aggiungerà altri frame)
 
-Aggiungere un nuovo frame nickname con le **stesse** regole (Crown/Title/PT, element name
-standard):
-1. Voce in `NICKNAME_FRAME_CONFIG` (`'ValueDropdown': { pack: 'ValueDropdown' }`).
-2. Due `<option value="ValueDropdown">…</option>` nei due select.
-3. Verificare che `pack<ValueDropdown>.js` esponga gli element name
-   `'<Colore> Frame/Crown/Title/Power/Toughness'` e definisca i campi testo `nickname`+`title` nel
-   suo `loadFrameVersion`.
+> NOTA (aggiornamento): il registry è stato rinominato `IMPORT_FRAME_CONFIG` e l'handler
+> generalizzato in `autoElementFrame(config, ...)` con flag `nickname` / `crown` / `titleElement`,
+> per coprire anche i frame **senza** nickname (es. Borderless). Vedi §10.
+
+Aggiungere un nuovo frame assemblato per element name:
+1. Voce in `IMPORT_FRAME_CONFIG`:
+   `'ValueDropdown': { pack: 'ValueDropdown', nickname: <bool>, crown: <bool>, titleElement: <bool> }`.
+2. Due `<option value="ValueDropdown">…</option>` nei due select (`#deck-autoframe` e `#autoFrame`).
+3. Verificare che `pack<ValueDropdown>.js` esponga gli element name `'<Colore> Frame'`,
+   `'<Colore> Power/Toughness'` e, se applicabile, `'<Colore> Crown'`/`'<Colore> Title'`, e definisca
+   i campi testo nel suo `loadFrameVersion` (`nickname`+`title` per i frame nickname, solo `title`
+   altrimenti).
 
 Frame con regole diverse (inner crown, holo stamp, split pinline multicolor, art bounds
-particolari) → arricchire il `config` con flag/funzioni dedicate, sulla falsariga di
-`getFrameTypeConfig` (`supportsCrown`, `makeFrameFunction`, ecc.) e ramificare in
-`autoNicknameFrame`.
+particolari) → arricchire il `config` con altri flag/funzioni dedicate, sulla falsariga di
+`getFrameTypeConfig`, e ramificare in `autoElementFrame`.
 
 Per i frame **senza** nickname si continua a usare il path standard (`getFrameTypeConfig` +
 `autoFrameUnified`) o un handler dedicato come Bloomburrow.
@@ -265,3 +269,21 @@ Per i frame **senza** nickname si continua a usare il path standard (`getFrameTy
   default memorizzata (`_importFullWidth`) per non accumulare tra carte. L'editing manuale resta
   invariato. Va richiamato da ogni handler di assemblaggio import (nickname → `'nickname'`,
   Bloomburrow → `'title'`).
+
+## 10. Generalizzazione (post-spec) — frame per element name + set symbol import
+
+- **Handler generalizzato**: `NICKNAME_FRAME_CONFIG` → **`IMPORT_FRAME_CONFIG`**, `autoNicknameFrame`
+  → **`autoElementFrame(config, ...)`** con flag `nickname` / `crown` / `titleElement`. Assembla
+  base `'<Colore> Frame'` + (`'<Colore> Crown'` se legendary e `crown`, altrimenti `'<Colore> Title'`
+  se `titleElement`) + `'<Colore> Power/Toughness'` se creatura. Imposta il campo `nickname` solo se
+  `config.nickname`; il clamp del nome usa `'nickname'` o `'title'` di conseguenza.
+- **Frame supportati**: `M15Nickname`/`IkoNicknameShort` (nickname:true, crown:true, titleElement:true);
+  `PromoRegular-1` = "Borderless Frames" e `IkoShort` = "Borderless Frames (Extra Short)" (tutti
+  false → solo base + P/T, niente nickname/crown, titolo nel campo `title` normale). I nomi nel frame
+  picker manuale vengono da `groupPromo-2.js`.
+- **Set symbol import** (`applyDeckSetSymbolOverride`, creator-23.js, dopo `importCardForDeck` nei tre
+  generatori): toggle `#importSetSymbolToggleDeck` "Insert set symbol" (default ON) + campo
+  `#importSetSymbolCodeDeck`. OFF → nessun simbolo (codice svuotato + `setSymbol.src = blank.src`);
+  ON+codice → quel codice ovunque; ON+vuoto → set proprio di ogni carta (`scryfallCard[idx].set`).
+  Necessario perché `changeCardIndex` ha l'assegnazione del codice **commentata** (~riga 4484) ma
+  chiama comunque `fetchSetSymbol()` → default `'cmd'` con campo vuoto.
