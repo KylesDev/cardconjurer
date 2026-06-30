@@ -287,3 +287,10 @@ Per i frame **senza** nickname si continua a usare il path standard (`getFrameTy
   ON+codice → quel codice ovunque; ON+vuoto → set proprio di ogni carta (`scryfallCard[idx].set`).
   Necessario perché `changeCardIndex` ha l'assegnazione del codice **commentata** (~riga 4484) ma
   chiama comunque `fetchSetSymbol()` → default `'cmd'` con campo vuoto.
+- **Collector info import** (`applyDeckCollectorInfo(entryNumber)`, creator-23.js, dopo
+  `importCardForDeck` nei tre generatori): pannello collassabile "Collector info" (`#deckCollector*`).
+  Toggle ON → forza lo stile new (post-ONE) + show, poi riempie i campi `#info-*`: numero
+  (progressivo auto zero-pad, o valore inserito), rarità (prima lettera della carta, o inserita),
+  artista (della carta, o inserito), e set/language/year/note uniformi. Campi vuoti lasciati vuoti.
+  Il render riusa la pipeline `bottomInfoEdited` (i `#info-*` → placeholder `{elemidinfo-*}`).
+  Collassabile via `class='collapsible collapsed'` + `toggleCollapse` (js/main-1.js).
