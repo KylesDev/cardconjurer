@@ -1846,12 +1846,17 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 		return clone;
 	}
 
+	// Push order = z-order top→bottom (card.frames[0] is drawn last/on top), matching
+	// autoBloomburrowFrame: the base frame is pushed LAST so it sits at the bottom, and
+	// the Crown/Title and Power/Toughness layers sit ON TOP of it (otherwise the base
+	// frame's opaque bottom border would hide the P/T box).
 	var newFrames = [...preservedFrames];
 
-	// Layer order (bottom to top before reverse):
-	// 1. Base frame
-	var baseEl = findFrameElement(colorName + ' Frame');
-	if (baseEl) newFrames.push(baseEl);
+	// 1. Power/Toughness (topmost; only if card has P/T)
+	if (power) {
+		var ptEl = findFrameElement(ptColorName + ' Power/Toughness');
+		if (ptEl) newFrames.push(ptEl);
+	}
 
 	// 2. Crown (if Legendary) or Title frame element
 	var isLegendary = type_line.toLowerCase().includes('legendary');
@@ -1863,11 +1868,9 @@ async function autoNicknameFrame(config, colors, mana_cost, type_line, power, ni
 		if (titleEl) newFrames.push(titleEl);
 	}
 
-	// 3. Power/Toughness (only if card has P/T)
-	if (power) {
-		var ptEl = findFrameElement(ptColorName + ' Power/Toughness');
-		if (ptEl) newFrames.push(ptEl);
-	}
+	// 3. Base frame (bottommost)
+	var baseEl = findFrameElement(colorName + ' Frame');
+	if (baseEl) newFrames.push(baseEl);
 
 	card.frames = newFrames;
 	card.frames.reverse();
