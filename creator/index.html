@@ -57,16 +57,16 @@
 			</div>
 			<div>
 				<h5 class='input-description'>HSL Adjustments</h5>
-				<input id='frame-editor-hsl-hue-slider' class='input' type='range' min='-180' max='180' value='0' step='1'>
-				<input id='frame-editor-hsl-hue' class='input' type='number' min='-180' max='180' value='0' step='1'>
-				<input id='frame-editor-hsl-saturation-slider' class='input' type='range' min='-100' max='100' value='0' step='1'>
-				<input id='frame-editor-hsl-saturation' class='input' type='number' min='-100' max='100' value='0' step='1'>
-				<input id='frame-editor-hsl-lightness-slider' class='input' type='range' min='-100' max='100' value='0' step='1'>
-				<input id='frame-editor-hsl-lightness' class='input' type='number' min='-100' max='100' value='0' step='1'>
+				<input id='frame-editor-hsl-hue-slider' class='input' type='range' min='-180' max='180' value='0' step='1' aria-label='HSL Hue Slider'>
+				<input id='frame-editor-hsl-hue' class='input' type='number' min='-180' max='180' value='0' step='1' aria-label='HSL Hue Value'>
+				<input id='frame-editor-hsl-saturation-slider' class='input' type='range' min='-100' max='100' value='0' step='1' aria-label='HSL Saturation Slider'>
+				<input id='frame-editor-hsl-saturation' class='input' type='number' min='-100' max='100' value='0' step='1' aria-label='HSL Saturation Value'>
+				<input id='frame-editor-hsl-lightness-slider' class='input' type='range' min='-100' max='100' value='0' step='1' aria-label='HSL Lightness Slider'>
+				<input id='frame-editor-hsl-lightness' class='input' type='number' min='-100' max='100' value='0' step='1' aria-label='HSL Lightness Value'>
 			</div>
 			<div>
 				<h5 class='input-description'>Select and remove masks</h5>
-				<select id='frame-editor-masks' class='input margin-bottom'></select>
+				<select id='frame-editor-masks' class='input margin-bottom' aria-label='Frame editor masks'></select>
 				<button onclick='frameElementMaskRemoved();' class='input'>Remove mask</button>
 			</div>
 			<div class='drop-area'>
@@ -115,7 +115,7 @@
 							<h5 class='margin-bottom padding input-description'>
 								Select a Frame Group and a Frame Pack, or type to search. Then you may Load the selected Frame Version (loading the frame version configures text placement, art size, etc...)</h5>
 							<div class='input-grid margin-bottom'>
-								<select id='selectFrameGroup' onchange='loadScript("/js/frames/group" + this.value + ".js")' class='input'>
+								<select id='selectFrameGroup' onchange='loadScript("/js/frames/group" + this.value + ".js")' class='input' aria-label='Select Frame Group'>
 									<option disabled>Standard Frames</option>
 									<option value='Standard-3'>Regular</option>
 									<option value='Token-2'>Tokens</option>
@@ -137,7 +137,7 @@
 									<option disabled>Other Games</option>
 									<option value='FleshAndBlood'>Flesh and Blood</option>
 								</select>
-								<select id='selectFramePack' onchange='loadScript("/js/frames/pack" + this.value + ".js")' class='input'></select>
+								<select id='selectFramePack' onchange='loadScript("/js/frames/pack" + this.value + ".js")' class='input' aria-label='Select Frame Pack'></select>
 								<div class="autocomplete"><input id='frameSearch' onchange="frameSearch(this.value)" type='text' class='input' placeholder='Search Frames...'></div>
 							</div>
 							<div class='input-grid margin-bottom'>
@@ -213,7 +213,7 @@
 						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='margin-bottom padding input-description'>Enter card text</h5>
-							<textarea id='text-editor' class='input margin-bottom' oninput='textEdited();'></textarea>
+							<textarea id='text-editor' class='input margin-bottom' oninput='textEdited();' aria-label='Card text editor'></textarea>
 							<div class='padding input-grid'>
 								<button class='input' onclick="toggleTextTag('i');">Italic</button>
 								<button class='input' onclick="toggleTextTag('bold');">Bold</button>
@@ -264,6 +264,7 @@
 									<h5>{/indent}</h5><h5>Removes paragraph indendation</h5>
 									<h5>{kerning#}</h5><h5>Changes the kerning (letter spacing) to #</h5>
 									<h5>{roll___}</h5><h5>Used for dice-rolling cards (like from AFR) - whatever you fill in for '___' will be bolded, and alternating paragraphs will be shaded.</h5>
+									<h5>{ruby:base:annotation}</h5><h5>For rendering furigana/pinyin annotations (requires manual font sizing)</h5>
 									<h5>Notes</h5><h5>For colors, you may use HTML color codes (ie 'green'), hex color codes (ie '#00FF00'), or rgb (ie 'rgb(0,255,0)'')</h5>
 								</div>
 								<h5>Mana Symbol Codes:</h5>
@@ -328,9 +329,9 @@
 								<button class='input margin-bottom' onclick='pasteArt();'>Paste from clipboard</button>
 							</div>
 							<h5 class='margin-bottom padding input-description'>Or enter a card name</h5>
-							<input id='art-name' type='text' placeholder='Enter Card Name' class='input margin-bottom' onchange="fetchScryfallData(this.value, artFromScryfall, 'art');">
+							<input id='art-name' type='text' placeholder='Enter Card Name' class='input margin-bottom' onchange="fetchScryfallData(this.value, artFromScryfall, 'art');" aria-label='Enter Card Name'>
 							<h5 class='padding margin-bottom input-description'>Select a specific card art to load</h5>
-							<select class='input margin-bottom' id='art-index' onchange='changeArtIndex();'></select>
+							<select class='input margin-bottom' id='art-index' onchange='changeArtIndex();' aria-label='Select specific card art'></select>
 							<h5 class='margin-bottom padding input-description'>And credit the artist</h5>
 							<div class='input-grid'>
 								<input id='art-artist' type='text' class='input' oninput='artistEdited(this.value);' placeholder='Artist'>
@@ -339,10 +340,10 @@
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='margin-bottom padding input-description'>Position/scale your art (X, Y, Scale, Rotation)<br>Art is now visually adjustable! Click and drag anywhere on the card to move your art around. Hold shift while doing so to scale, or control to rotate.</h5>
 							<div class='input-grid margin-bottom'>
-								<input id='art-x' type='number' class='input' oninput='artEdited();' value=0>
-								<input id='art-y' type='number' class='input' oninput='artEdited();' value=0>
-								<input id='art-zoom' type='number' class='input' oninput='artEdited();' value=100 step=0.1 min=0>
-								<input id='art-rotate' type='number' class='input' oninput='artEdited();' value=0 step=1 min=0 max=360>
+								<input id='art-x' type='number' class='input' oninput='artEdited();' value=0 aria-label='Art X Position'>
+								<input id='art-y' type='number' class='input' oninput='artEdited();' value=0 aria-label='Art Y Position'>
+								<input id='art-zoom' type='number' class='input' oninput='artEdited();' value=100 step=0.1 min=0 aria-label='Art Scale'>
+								<input id='art-rotate' type='number' class='input' oninput='artEdited();' value=0 step=1 min=0 max=360 aria-label='Art Rotation'>
 							</div>
 							<div class='input-grid'>
 								<button class='input' onclick='autoFitArt();'>Auto Fit Art</button>
@@ -386,7 +387,7 @@
 							</div>
 							<h5 class='margin-bottom padding input-description'>Load set symbols from:</h5>
 							<div class='input-grid margin-bottom'>
-								<select id='set-symbol-source' class='input' onchange='fetchSetSymbol();'>
+								<select id='set-symbol-source' class='input' onchange='fetchSetSymbol();' aria-label='Set symbol source'>
 									<option value='cardconjurer'>CardConjurer</option>
 									<option value='gatherer'>Gatherer</option>
 									<option value='hexproof'>Hexproof.io</option>
@@ -398,16 +399,16 @@
 							<div class='padding'>
 								<h5 class='margin-top'>Set codes are the two-three character combinations that represent sets. For sets released after 2015, the three-character set code can be found in the lower left hand corner.</h5>
 								<h5 class='margin-top'>For older sets, the code may be different depending on your use:</h5>
-								<p class='margin-top padding'>Set symbol images are named using the same codes as used in <a class='underline' href='https://scryfall.com/sets' target='_blank'>Scryfall</a>.</p>
-								<p class='padding'>For watermarks, please reference <a class='underline' href='https://keyrune.andrewgioia.com/icons.html' target='_blank'>Keyrune</a>.</p>
+								<p class='margin-top padding'>Set symbol images are named using the same codes as used in <a class='underline' href='https://scryfall.com/sets' target='_blank' rel='noopener'>Scryfall</a>.</p>
+								<p class='padding'>For watermarks, please reference <a class='underline' href='https://keyrune.andrewgioia.com/icons.html' target='_blank' rel='noopener'>Keyrune</a>.</p>
 							</div>
 						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='margin-bottom padding input-description'>Position/scale your Set Symbol (X, Y, Scale)</h5>
 							<div class='input-grid margin-bottom'>
-								<input id='setSymbol-x' type='number' class='input' oninput='setSymbolEdited();' value=0>
-								<input id='setSymbol-y' type='number' class='input' oninput='setSymbolEdited();' value=0>
-								<input id='setSymbol-zoom' type='number' class='input' oninput='setSymbolEdited();' value=100 step=0.1 min=0>
+								<input id='setSymbol-x' type='number' class='input' oninput='setSymbolEdited();' value=0 aria-label='Set Symbol X Position'>
+								<input id='setSymbol-y' type='number' class='input' oninput='setSymbolEdited();' value=0 aria-label='Set Symbol Y Position'>
+								<input id='setSymbol-zoom' type='number' class='input' oninput='setSymbolEdited();' value=100 step=0.1 min=0 aria-label='Set Symbol Scale'>
 							</div>
 							<div class='input-grid'>
 								<button class='input' onclick='resetSetSymbol();'>Reset Set Symbol</button>
@@ -451,7 +452,7 @@
 								</div>
 							</div>
 							<h5 class='margin-bottom padding input-description'>Select lore-based watermarks</h5>
-							<select class='input padding margin-bottom' onchange='getSetSymbolWatermark(fixUri(this.value));'>
+							<select class='input padding margin-bottom' onchange='getSetSymbolWatermark(fixUri(this.value));' aria-label='Select lore-based watermarks'>
 								<option disabled selected='selected'>None</option>
 								<option disabled>General</option>
 								<option value="/img/watermarks/planeswalker.svg">Planeswalker</option>
@@ -487,6 +488,8 @@
 								<option value="/img/watermarks/school-witherbloom.svg">Witherbloom</option>
 								<option value="/img/watermarks/school-lorehold.svg">Lorehold</option>
 								<option value="/img/watermarks/school-quandrix.svg">Quandrix</option>
+								<option disabled>Echoverse (Reality Fracture)</option>
+								<option value="/img/watermarks/fracture.svg">Echoverse</option>
 								<option disabled>Families (New Capenna)</option>
 								<option value="/img/watermarks/family-brokers.svg">Brokers</option>
 								<option value="/img/watermarks/family-obscura.svg">Obscura</option>
@@ -516,10 +519,10 @@
 								<option value="/img/watermarks/faction-goblin-explosioneers.svg">Goblin Explosioneers</option>
 								<option value="/img/watermarks/faction-crossbreed-labs.svg">Crossbreed Labs</option>
 								<option disabled>Avatar The Last Airbender (TLA)</option>
-								<option value="/img/watermarks/atla-water.svg">Water Nation</option>
-								<option value="/img/watermarks/atla-earth.svg">Earth Nation</option>
+								<option value="/img/watermarks/atla-water.svg">Water Tribe</option>
+								<option value="/img/watermarks/atla-earth.svg">Earth Kingdom</option>
 								<option value="/img/watermarks/atla-fire.svg">Fire Nation</option>
-								<option value="/img/watermarks/atla-air.svg">Air Nation</option>
+								<option value="/img/watermarks/atla-air.svg">Air Nomads</option>
 								<option disabled>Custom</option>
 								<option value="/img/watermarks/purple.svg">Purple Mana</option>
 								<option value="/img/watermarks/britney.svg">It's Britney</option>
@@ -530,14 +533,14 @@
 							<div class='padding'>
 								<h5 class='margin-top'>Set codes are the two-three character combinations that represent sets. For sets released after 2015, the three-character set code can be found in the lower left hand corner.</h5>
 								<h5 class='margin-top'>For older sets, the code may be different depending on your use:</h5>
-								<p class='margin-top padding'>Set symbol images are named using the same codes as used in <a class='underline' href='https://scryfall.com/sets' target='_blank'>Scryfall</a>.</p>
-								<p class='padding'>For watermarks, please reference <a class='underline' href='https://keyrune.andrewgioia.com/icons.html' target='_blank'>Keyrune</a>.</p>
+								<p class='margin-top padding'>Set symbol images are named using the same codes as used in <a class='underline' href='https://scryfall.com/sets' target='_blank' rel='noopener'>Scryfall</a>.</p>
+								<p class='padding'>For watermarks, please reference <a class='underline' href='https://keyrune.andrewgioia.com/icons.html' target='_blank' rel='noopener'>Keyrune</a>.</p>
 							</div>
 						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='margin-bottom padding input-description'>Select watermark colors (left, right)</h5>
 							<div class='input-grid margin-bottom'>
-								<select class='input' id='watermark-left' onchange='watermarkLeftColor(this.value);'>
+								<select class='input' id='watermark-left' onchange='watermarkLeftColor(this.value);' aria-label='Watermark left color'>
 									<option value="none">None</option>
 					                <option value="default">Actual Image</option>
 					                <option value="#b79d58" selected="selected">White</option>
@@ -551,7 +554,7 @@
 					                <option value="#ffffff">True White</option>
 					                <option value="#000000">True Black</option>
 								</select>
-								<select class='input' id='watermark-right' onchange='watermarkRightColor(this.value);'>
+								<select class='input' id='watermark-right' onchange='watermarkRightColor(this.value);' aria-label='Watermark right color'>
 									<option value="none" selected="selected">None</option>
 					                <option value="default">Actual Image</option>
 					                <option value="#b79d58">White</option>
@@ -573,15 +576,15 @@
 							</div>
 							<h5 class='margin-bottom padding input-description'>And enter an opacity</h5>
 							<div class='input-grid margin-bottom'>
-								<input id='watermark-opacity' type='number' class='input' oninput='watermarkEdited();' value=40 step=1 min=0 max=100>
+								<input id='watermark-opacity' type='number' class='input' oninput='watermarkEdited();' value=40 step=1 min=0 max=100 aria-label='Watermark opacity'>
 							</div>
 						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='margin-bottom padding input-description'>Position/scale your watermark (X, Y, Scale)</h5>
 							<div class='input-grid margin-bottom'>
-								<input id='watermark-x' type='number' class='input' oninput='watermarkEdited();' value=0>
-								<input id='watermark-y' type='number' class='input' oninput='watermarkEdited();' value=0>
-								<input id='watermark-zoom' type='number' class='input' oninput='watermarkEdited();' value=100 step=0.1 min=0>
+								<input id='watermark-x' type='number' class='input' oninput='watermarkEdited();' value=0 aria-label='Watermark X Position'>
+								<input id='watermark-y' type='number' class='input' oninput='watermarkEdited();' value=0 aria-label='Watermark Y Position'>
+								<input id='watermark-zoom' type='number' class='input' oninput='watermarkEdited();' value=100 step=0.1 min=0 aria-label='Watermark Scale'>
 							</div>
 							<div class='input-grid'>
 								<button class='input' onclick='resetWatermark();'>Reset Watermark</button>
@@ -645,9 +648,9 @@
 
 							<h5 class='padding input-description'>Placement (X, Y, Scale)</h5>
 							<div class='padding input-grid'>
-								<input id='serial-x' type='number' class='input' oninput='serialInfoEdited();' min='0' value='172'>
-								<input id='serial-y' type='number' class='input' oninput='serialInfoEdited();' min='0' value='1383'>
-								<input id='serial-scale' type='number' class='input' oninput='serialInfoEdited();' min='0' step='0.01' value='1'>
+								<input id='serial-x' type='number' class='input' oninput='serialInfoEdited();' min='0' value='172' aria-label='Serial Number X Position'>
+								<input id='serial-y' type='number' class='input' oninput='serialInfoEdited();' min='0' value='1383' aria-label='Serial Number Y Position'>
+								<input id='serial-scale' type='number' class='input' oninput='serialInfoEdited();' min='0' step='0.01' value='1' aria-label='Serial Number Scale'>
 							</div>
 							<div class='padding input-grid'>
 								<button class='input' onclick='resetSerial();'>Reset Serial Number Placement</button>
@@ -684,9 +687,9 @@
 								<span class='checkmark'></span>
 							</label>
 							<h5 class='padding margin-bottom input-description'>Select a specific card to import</h5>
-							<select class='input margin-bottom' id='import-index' onchange='changeCardIndex();'></select>
+							<select class='input margin-bottom' id='import-index' onchange='changeCardIndex();' aria-label='Select specific card to import'></select>
 							<h5 class='padding input-description'>Select a language for card imports (not all languages will always be available)</h5>
-							<select class='input' id='import-language' onchange='importChanged();'>
+							<select class='input' id='import-language' onchange='importChanged();' aria-label='Select language for card imports'>
 								<option value="en">English</option>
 								<option value="es">Spanish</option>
 								<option value="fr">French</option>
@@ -709,15 +712,17 @@
 							<h5 class='padding margin-bottom input-description'>Save your current card</h5>
 							<button class='input margin-bottom' onclick='saveCard();'>Save Card</button>
 							<h5 class='padding margin-bottom input-description'>Load a saved card</h5>
-							<select id='load-card-options' class='input margin-bottom' type='text' onchange='loadCard(this.value);'></select>
+							<select id='load-card-options' class='input margin-bottom' type='text' onchange='loadCard(this.value);' aria-label='Load a saved card'></select>
 							<h5 class='padding margin-bottom input-description'>Delete selected card</h5>
 							<button class='input' onclick='deleteCard();'>Delete Card</button>
 						</div>
 						<div class='readable-background padding margin-bottom'>
-							<h5 class='padding margin-bottom input-description'>Download all saved cards</h5>
-							<button class='input margin-bottom' onclick='downloadSavedCards();'>Download All</button>
+							<h5 class='padding margin-bottom input-description'>Download all saved cards as a file</h5>
+							<button class='input margin-bottom' onclick='downloadSavedCards();'>Download Cards File</button>
+							<h5 class='padding margin-bottom input-description'>Download all saved card images as a zip file(can take a long time)</h5>
+							<button class='input margin-bottom' onclick="bulkDownloadZip();">Download All Images</button>
 							<h5 class='padding margin-bottom input-description'>Upload previously downloaded file of saved cards (downloaded from above)</h5>
-							<input type='file' accept='.cardconjurer,.txt' class='input margin-bottom' oninput='uploadSavedCards(event);'>
+							<input type='file' accept='.cardconjurer,.txt' class='input margin-bottom' oninput='uploadSavedCards(event);' aria-label='Upload saved cards file'>
 							<h5 class='padding margin-bottom input-description'>Delete ALL saved cards</h5>
 							<button class='input margin-bottom' onclick='deleteSavedCards();'>Delete All</button>
 						</div>
@@ -797,14 +802,14 @@
 							<h5 class='padding input-description'>Here is a tutorial that covers the basics of using Card Conjurer:</h5>
 						</div>
 						<div class='video'>
-							<iframe width="560" height="315" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+							<iframe width="560" height="315" frameborder="0" allow="encrypted-media" allowfullscreen title="Card Conjurer Tutorial Video"></iframe>
 						</div>
 					</div>
 				</div>
 				<div id='autoframe-section' class='readable-background padding margin-bottom'>
 					<h5 class='padding input-description'>Automatically update frame</h5>
 					<div class='padding input-grid'>
-						<select id="autoFrame" class="input" onchange="setAutoFrame()">
+						<select id="autoFrame" class="input" onchange="setAutoFrame()" aria-label="Automatically update frame">
 							<option value="false">Disabled</option>
 							<option value="M15Regular-1">Regular</option>
 							<option value="M15BoxTopper">Extended Art</option>
@@ -816,6 +821,15 @@
 							<option value="Praetors">Phyrexian</option>
 							<option value="8th">Eighth Edition</option>
 							<option value="Seventh">Seventh Edition</option>
+
+							<option disabled>Showcase frames</option>
+							<option value="JapanShowcase">Japan Showcase</option>
+							<option value="Vault">Vault (BIG)</option>
+							
+							<option disabled>Alternative Layouts</option>
+							<option value="Adventure">Adventure</option>
+							<option value="Omen">Omen</option>
+							<option value="Prepare">Prepare</option>
 
 							<option disabled>Redone frames</option>
 							<option value="M15RegularNew">Regular (Accurate)</option>
@@ -842,8 +856,8 @@
 				</div>
 				<div id='download-section' class='readable-background padding'>
 					<h3 class='download padding' onclick='downloadCard();'>Download your card</h3>
-					<h5 onclick='downloadCard(false, true);' id='downloadJpg' href='' target='_blank' class='padding download input-description' style='text-align: left;'>Click here to download as JPEG</h5>
-					<h5 onclick='downloadCard(true);' id='downloadAlt' href='' target='_blank' class='padding download input-description' style='text-align: left;'>Click here for an alternative download</h5>
+					<h5 onclick='downloadCard(false, true);' id='downloadJpg' href='' target='_blank' class='padding download input-description'>Click here to download as JPEG</h5>
+					<h5 onclick='downloadCard(true);' id='downloadAlt' href='' target='_blank' class='padding download input-description'>Click here for an alternative download</h5>
 					<!-- <label class='checkbox-container input margin-bottom'>800 DPI
 						<input id='high-res' type='checkbox' onchange='toggleHighRes();'>
 						<span class='checkmark'></span>
@@ -1030,6 +1044,7 @@
 
 	</div>
 	<script src='/js/jszip.min.js'></script>
+	<script defer src='/js/autoFrame.js'></script>
 	<script defer src='/js/creator-23.js'></script>
 	<script defer src='/js/frameSearch.js'></script>
 <!-- END OF CONTENT -->
