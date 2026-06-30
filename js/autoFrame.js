@@ -1801,7 +1801,10 @@ function clampImportTextWidths(topNameKey) {
 		}
 	}
 
-	// Type line vs. set symbol (optional). Set symbol ≈ a square fit to setSymbolBounds.height.
+	// Type line vs. set symbol (optional). The symbol is scaled to fit setSymbolBounds and can
+	// occupy up to the full bounds WIDTH, so reserve the whole bounds width (the symbol's left
+	// edge can reach setSymbolBounds.x - width) to guarantee the type clears it regardless of the
+	// symbol's aspect ratio — a height-based square estimate under-reserved for wider symbols.
 	var typeField = card.text.type;
 	var ssb = card.setSymbolBounds;
 	var setCodeEl = document.querySelector('#set-symbol-code');
@@ -1809,10 +1812,10 @@ function clampImportTextWidths(topNameKey) {
 		if (typeField._importFullWidth == null) { typeField._importFullWidth = typeField.width; }
 		var fullTW = typeField._importFullWidth;
 		if (ssb && setCodeEl && setCodeEl.value) {
-			var symW = (ssb.height || 0.04) * aspect;
+			var reserveW = ssb.width || ((ssb.height || 0.04) * aspect);
 			var ssLeft;
-			if (ssb.horizontal === 'right') { ssLeft = (ssb.x || 1) - symW; }
-			else if (ssb.horizontal === 'center') { ssLeft = (ssb.x || 1) - symW / 2; }
+			if (ssb.horizontal === 'right') { ssLeft = (ssb.x || 1) - reserveW; }
+			else if (ssb.horizontal === 'center') { ssLeft = (ssb.x || 1) - reserveW / 2; }
 			else { ssLeft = (ssb.x || 1); }
 			var availT = ssLeft - (typeField.x || 0) - 0.008;
 			typeField.width = Math.max(0.2, Math.min(fullTW, availT));

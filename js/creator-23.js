@@ -5199,6 +5199,7 @@ async function generateDeck() {
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
+				applyDeckSetSymbolOverride();
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 
@@ -5356,6 +5357,7 @@ async function generateSingleCard() {
 
 		// Import the card from Scryfall
 		await importCardForDeck(cardName);
+		applyDeckSetSymbolOverride();
 
 		progressText.textContent = `Loading: ${cardName}...`;
 		progressBar.value = 40;
@@ -5484,6 +5486,18 @@ function fetchScryfallCardByExactName(cardName) {
 			reject(new Error(`Scryfall API request failed: ${error.message}`));
 		}
 	});
+}
+
+// Import Deck: when the "Use custom set symbol" toggle is on, override the set symbol code for
+// every generated card with the user-provided code, keeping each card's own rarity (already set
+// by changeCardIndex). Call this right after importCardForDeck, before the card is rendered.
+function applyDeckSetSymbolOverride() {
+	const toggle = document.querySelector('#importSetSymbolToggleDeck');
+	const codeEl = document.querySelector('#importSetSymbolCodeDeck');
+	if (toggle && toggle.checked && codeEl && codeEl.value.trim()) {
+		document.querySelector('#set-symbol-code').value = codeEl.value.trim();
+		fetchSetSymbol(); // re-fetches with the custom code + the per-card rarity
+	}
 }
 
 function importCardForDeck(cardName) {
@@ -5885,6 +5899,7 @@ async function generateDeckFromZip() {
 			try {
 				// Import the card from Scryfall
 				await importCardForDeck(cardEntry.name);
+				applyDeckSetSymbolOverride();
 
 				progressText.textContent = `Loading: ${cardEntry.name}...`;
 
