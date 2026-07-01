@@ -559,6 +559,41 @@ async function applyDeckCollectorInfo(entryNumber) {
 	bottomInfoEdited();
 }
 
+// Import Deck art override. Call AFTER waitForCardReady() (i.e. after auto-fit has already run
+// on the loaded art), not right after import like the two functions above.
+// Each of the three fields (#deckArtOffsetX/Y, #deckArtZoom) is independently optional: an empty
+// field leaves auto-fit's value for that property untouched. When set, it directly replaces the
+// auto-fitted value, mirroring how the Art panel's own #art-x/#art-y/#art-zoom fields work
+// (#art-x/#art-y are pixel offsets stored as a fraction of card.width/card.height; #art-zoom is
+// already a percentage). Offsets here are given as a percentage of card.width/card.height instead
+// of pixels, so they stay correct across different art/card resolutions.
+function applyDeckArtOverride() {
+	const xEl = document.querySelector('#deckArtOffsetX');
+	const yEl = document.querySelector('#deckArtOffsetY');
+	const zoomEl = document.querySelector('#deckArtZoom');
+
+	const xPercent = xEl ? xEl.value.trim() : '';
+	const yPercent = yEl ? yEl.value.trim() : '';
+	const zoomPercent = zoomEl ? zoomEl.value.trim() : '';
+
+	if (xPercent !== '') {
+		card.artX = parseFloat(xPercent) / 100;
+		document.querySelector('#art-x').value = Math.round(card.artX * card.width);
+	}
+	if (yPercent !== '') {
+		card.artY = parseFloat(yPercent) / 100;
+		document.querySelector('#art-y').value = Math.round(card.artY * card.height);
+	}
+	if (zoomPercent !== '') {
+		card.artZoom = parseFloat(zoomPercent) / 100;
+		document.querySelector('#art-zoom').value = parseFloat(zoomPercent);
+	}
+
+	if (xPercent !== '' || yPercent !== '' || zoomPercent !== '') {
+		drawCard();
+	}
+}
+
 // ============================================================================
 // SECTION 7: CARD IMPORT ENGINE (from creator-23.js)
 // ============================================================================
@@ -662,6 +697,13 @@ function waitForCardReady() {
 			// Check if art has loaded and is stable
 			const artLoaded = art && art.src && !art.src.includes('/img/blank.png');
 			const artComplete = art && art.complete;
+			// art.complete can flip true slightly before the queued 'load' event actually runs
+			// the uploadArt(...,'autoFit') onload chain (autoFitArt -> artEdited), which is what
+			// writes card.artX/artY/artZoom. artEdited() always ends by setting card.artSource to
+			// art.src, so requiring them to match confirms that chain has actually finished —
+			// otherwise a caller relying on card.artX/Y/Zoom right after this resolves (e.g. an
+			// art override) can race a still-pending autoFitArt() and get clobbered.
+			const artFitApplied = art && card.artSource === art.src;
 
 			// Track if art source is stable (not changing)
 			if (art && art.src === lastArtSrc) {
@@ -676,9 +718,10 @@ function waitForCardReady() {
 
 			// Card is ready when:
 			// 1. Art is loaded and complete
-			// 2. Art source has been stable for at least 3 checks (300ms)
-			// 3. Frames have been added
-			const isReady = artLoaded && artComplete && artStableCount >= 3 && framesAdded;
+			// 2. The autoFit->artEdited chain has actually run for this art source
+			// 3. Art source has been stable for at least 3 checks (300ms)
+			// 4. Frames have been added
+			const isReady = artLoaded && artComplete && artFitApplied && artStableCount >= 3 && framesAdded;
 
 			if (isReady || checksRemaining <= 0) {
 				clearInterval(checkInterval);
@@ -965,6 +1008,11 @@ async function generateDeck() {
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
 
+				// Frame packs re-run autoFitArt() against their own artBounds when applied
+				// (see e.g. js/frames/packPromoRegular-1.js), so the art override must run
+				// after autoFrame(), not before, or it gets clobbered by that re-fit.
+				applyDeckArtOverride();
+
 				// Ensure canvas is fully drawn
 				progressText.textContent = `Rendering: ${cardEntry.name}...`;
 				if (typeof drawCard === 'function') {
@@ -1126,12 +1174,15 @@ async function generateSingleCard() {
 				}
 			};
 
-			if (art.complete && art.src === singleImageUpload.imageUrl) {
+			// Require card.artSource to match too: it's only set once the autoFit ->
+			// artEdited chain has actually run, not just once art.complete flips true
+			// (see waitForCardReady's artFitApplied for why that gap matters here).
+			if (art.complete && art.src === singleImageUpload.imageUrl && card.artSource === art.src) {
 				resolve();
 			} else {
 				// Poll for art completion
 				checkInterval = setInterval(() => {
-					if (art.complete && art.src === singleImageUpload.imageUrl) {
+					if (art.complete && art.src === singleImageUpload.imageUrl && card.artSource === art.src) {
 						cleanup();
 						resolve();
 					}
@@ -1159,6 +1210,11 @@ async function generateSingleCard() {
 			// Wait for autoframe to complete - use longer timeout for complex frames
 			await new Promise(resolve => setTimeout(resolve, AUTOFRAME_TIMEOUT_MS));
 		}
+
+		// Frame packs re-run autoFitArt() against their own artBounds when applied
+		// (see e.g. js/frames/packPromoRegular-1.js), so the art override must run
+		// after autoFrame(), not before, or it gets clobbered by that re-fit.
+		applyDeckArtOverride();
 
 		// Ensure canvas is fully drawn
 		progressText.textContent = `Rendering: ${cardName}...`;
@@ -1318,6 +1374,11 @@ async function generateDeckFromZip() {
 					// Wait for autoframe to complete
 					await new Promise(resolve => setTimeout(resolve, 1000));
 				}
+
+				// Frame packs re-run autoFitArt() against their own artBounds when applied
+				// (see e.g. js/frames/packPromoRegular-1.js), so the art override must run
+				// after autoFrame(), not before, or it gets clobbered by that re-fit.
+				applyDeckArtOverride();
 
 				// Ensure canvas is fully drawn
 				progressText.textContent = `Rendering: ${cardEntry.name}...`;

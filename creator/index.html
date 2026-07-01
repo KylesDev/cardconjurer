@@ -835,6 +835,17 @@
 								</div>
 							</div>
 						</div>
+						<div class='readable-background margin-bottom padding'>
+							<h5 class='collapsible collapsed padding input-description' onclick='toggleCollapse(event);'>Art overrides</h5>
+							<div class='padding'>
+								<h5 class='margin-bottom input-description'>Applied after auto-fit to every card's artwork. Leave a field empty to keep the auto-fit value for that property. Offsets are a percentage of the card width/height (same direction as the Art panel's pixel offset); zoom is a percentage like the Art panel's zoom field.</h5>
+								<div class='padding input-grid'>
+									<input id='deckArtOffsetX' class='input' type='number' step='0.1' placeholder='Horizontal offset % (e.g. -5)'>
+									<input id='deckArtOffsetY' class='input' type='number' step='0.1' placeholder='Vertical offset % (e.g. 0)'>
+								</div>
+								<input id='deckArtZoom' class='input margin-bottom' type='number' step='0.1' placeholder='Zoom % (e.g. 120)'>
+							</div>
+						</div>
 						<div class='readable-background padding margin-bottom'>
 							<h5 class='padding margin-bottom input-description'>Generate and download all cards in the decklist</h5>
 							<button id='generate-deck-button' class='input margin-bottom' onclick='generateDeck();'>Generate & Download Deck</button>

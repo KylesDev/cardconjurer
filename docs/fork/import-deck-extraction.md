@@ -37,7 +37,7 @@ creator-23.js. Sezioni:
 | 3 | `window.clampImportTextWidths`, `window.autoElementFrame`, `window.autoBloomburrowFrame`, `window.makeBloomburrowFrameByLetter` | autoFrame.js |
 | 4 | `splitNickname`, `parseDeckList`, `parseImageFilename` | creator-23.js |
 | 5 | `fetchScryfallCardByExactName` | creator-23.js |
-| 6 | `applyDeckSetSymbolOverride`, `applyDeckCollectorInfo` | creator-23.js |
+| 6 | `applyDeckSetSymbolOverride`, `applyDeckCollectorInfo`, `applyDeckArtOverride` | creator-23.js |
 | 7 | `importCardForDeck`, `waitForCardReady`, `sanitizeFilename` | creator-23.js |
 | 8 | `handleFileUpload`, `handleSingleImageUpload`, `handleZipUpload`, `clearUploadedFiles`, `clearZipImages`, `clearUploadedFilesUI` | creator-23.js |
 | 9 | `generateDeck`, `generateSingleCard`, `generateDeckFromZip` | creator-23.js |
