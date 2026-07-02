@@ -53,6 +53,34 @@
 	// preloads; plain upstream frames and BloomburrowBorderlessColored are excluded).
 	var loadedFramePacks = new Set();
 
+	// Bootstrap for a totally fresh headless session (no prior localStorage / UI clicks).
+	//
+	// Why this exists (non-obvious — keep it): js/creator-23.js's own top-level tail init
+	// (after DOM parse) is supposed to loadScript('/js/frames/groupStandard-3.js'), which
+	// eventually loads the default 'M15Regular-1' pack and populates `card.text` with a base
+	// text template — changeCardIndex() (called by every card import) assumes `card.text` is
+	// already a real object and crashes ("Cannot read properties of undefined (reading
+	// 'title')") if it isn't. But that tail init calls bindInputs(...) first, a function only
+	// defined in js/main-1.js — which creator/index.html never loads — so it throws and
+	// aborts everything after it in that script, INCLUDING the groupStandard-3.js load. This
+	// is a pre-existing bug in the fork itself (not introduced here, not caused by renderApi.js)
+	// that a real interactive user rarely notices because they usually resume a previously
+	// saved card (card.text already restored) rather than starting from a truly blank session.
+	// A headless render session always starts blank, so it always hits this.
+	//
+	// Fix, contained entirely to this fork-only file: explicitly load packM15Regular-1.js
+	// ourselves. That pack script already has a self-healing guard for exactly this situation
+	// at its own top level: `if (!card.text) { setTimeout(() => loadFrameVersionBtn.click()); }`
+	// — so simply getting it loaded once is enough; no need to replicate its internals here.
+	var defaultCardBootstrapped = false;
+
+	async function ensureDefaultCardInitialized() {
+		if (defaultCardBootstrapped || card.text) { return; }
+		await loadScript('/js/frames/packM15Regular-1.js');
+		await sleep(800); // let its self-click -> loadTextOptions() chain settle
+		defaultCardBootstrapped = true;
+	}
+
 	async function ensureFramePackLoaded(frameKey) {
 		if (!frameKey) { return; }
 		// Only IMPORT_FRAME_CONFIG frames have a pack that needs preloading here —
@@ -110,6 +138,10 @@
 		if (!spec || typeof spec.name !== 'string' || !spec.name.trim()) {
 			throw new Error('spec.name is required');
 		}
+
+		// 0. One-time per-session bootstrap so changeCardIndex() has a card.text to write into
+		//    (see ensureDefaultCardInitialized() above for why this is needed at all).
+		await ensureDefaultCardInitialized();
 
 		// 1. Import from Scryfall (exact name). Fetches mana/type/P/T text and applies
 		//    Card Conjurer's own default Scryfall art.
