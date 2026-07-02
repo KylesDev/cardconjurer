@@ -97,6 +97,27 @@ mechanism that function uses internally: set `#set-symbol-code` + call
 `fetchSetSymbol()`. Behaviour matches the contract (override when `set_code` is given,
 otherwise leave the import default).
 
+## 5b. Blank-session bootstrap (non-obvious — keep it)
+
+A totally fresh session (no localStorage, no prior UI clicks — exactly what a headless
+render always is) never gets a default frame template loaded: `creator-23.js`'s own
+tail init throws on `bindInputs(...)` (only defined in `js/main-1.js`, which
+`creator/index.html` never loads), aborting everything after it in that script,
+including the `loadScript('/js/frames/groupStandard-3.js')` call that would normally
+populate `card.text`. `changeCardIndex()` (called by every import) then crashes on the
+very first card ("Cannot read properties of undefined (reading 'title')") because it
+assumes `card.text` already exists. This is a **pre-existing bug in the fork itself**
+(present before this module), not something introduced here — real interactive users
+rarely hit it because they usually resume a previously saved card instead of starting
+from a blank session.
+
+Fix, contained entirely to this file: `ensureDefaultCardInitialized()` loads
+`/js/frames/packM15Regular-1.js` once per session before the first import.
+That pack already has a self-healing guard for exactly this case at its own top level
+(`if (!card.text) { setTimeout(() => loadFrameVersionBtn.click()); }`), so simply
+getting it loaded is enough — no need to replicate its internals here, and no need to
+touch `js/creator-23.js`.
+
 ## 6. Upstream hook
 
 One added line in `creator/index.html`, immediately after the `deckImport.js` tag,
