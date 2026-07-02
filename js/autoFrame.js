@@ -1755,17 +1755,25 @@ function autoFrame() {
 		}
 	} else if (window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[frame]) {
 		// FORK: import-deck frame dispatch — IMPORT_FRAME_CONFIG and autoElementFrame defined in js/fork/deckImport.js
-		if (window.autoElementFrame) {
-			window.autoElementFrame(
-				window.IMPORT_FRAME_CONFIG[frame], colors,
-				card.text.mana.text, card.text.type.text, card.text.pt.text,
-				window.deckImportNickname || ''
-			);
-		}
-		if (autoFramePack != frame) {
-			loadScript('/js/frames/pack' + frame + '.js');
-			autoFramePack = frame;
-		}
+		// Unlike the native frames above, autoElementFrame() reads `availableFrames` and
+		// `#loadFrameVersion.onclick`, both only populated once THIS frame's pack script has
+		// actually run. Loading the pack must happen (and finish) BEFORE autoElementFrame() runs,
+		// not after/concurrently, or it reads whatever pack was previously loaded — which showed up
+		// as e.g. selecting "Nickname Frames (Extra Short)" rendering the non-short frame graphic
+		// and vice versa.
+		var packReady = (autoFramePack != frame)
+			? loadScript('/js/frames/pack' + frame + '.js')
+			: Promise.resolve();
+		autoFramePack = frame;
+		packReady.then(function() {
+			if (window.autoElementFrame) {
+				window.autoElementFrame(
+					window.IMPORT_FRAME_CONFIG[frame], colors,
+					card.text.mana.text, card.text.type.text, card.text.pt.text,
+					window.deckImportNickname || ''
+				);
+			}
+		});
 	}
 }
 
