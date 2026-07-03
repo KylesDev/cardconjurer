@@ -16,11 +16,27 @@
  * Requires (from global scope, loaded by earlier scripts before this file):
  *   card, art, cardCanvas                                (creator-23.js)
  *   importCardForDeck, waitForCardReady                  (fork/deckImport.js)
+ *   applyDeckSetSymbolOverride, applyDeckCollectorInfo,
+ *   applyDeckArtOverride                                 (fork/deckImport.js)
  *   AUTOFRAME_TIMEOUT_MS, CANVAS_RENDER_TIMEOUT_MS,
  *   ART_LOAD_TIMEOUT_MS, ART_LOAD_POLL_INTERVAL_MS       (fork/deckImport.js)
  *   window.IMPORT_FRAME_CONFIG                           (fork/deckImport.js)
  *   uploadArt, drawCard, loadScript, fetchSetSymbol,
  *   autoFrame                                            (creator-23.js / autoFrame.js)
+ *
+ * Deck-wide + per-card render settings (proxsmith issue #11): the manifest
+ * handed to proxsmithRenderDeck() may carry a top-level "render" object
+ * (flavor_text, set_symbol_mode/set_code, collector.*, art_offset_x/y,
+ * art_zoom -- see proxsmith/adapters/render_cardconjurer.py's build_manifest())
+ * plus, per card, resolved override fields (art_offset_x/y, art_zoom, artist,
+ * rarity -- proxsmith/core/model.py's Deck.art_override_for()/etc). This file
+ * does not reimplement any of that logic -- it only sets the same DOM fields
+ * the human "Import Deck" tab uses, then calls the SAME deckImport.js engine
+ * functions (applyDeckSetSymbolOverride / applyDeckCollectorInfo /
+ * applyDeckArtOverride) that tab already relies on. Every step below is
+ * defensive: an absent/undefined "render" block (older manifest shape, or a
+ * bare proxsmithRenderCard(spec) call with no render info) skips the
+ * corresponding DOM writes entirely rather than throwing.
  *
  * Load order: place the <script> tag AFTER creator-23.js, autoFrame.js and
  * deckImport.js (all `defer`). See docs/fork/render-api.md.
@@ -119,6 +135,144 @@
 		});
 	}
 
+	// --- Deck-wide + per-card render settings (issue #11) ----------------------
+	//
+	// Split into four small step functions instead of one monolithic helper,
+	// because each targets a DOM group that must be touched at a DIFFERENT
+	// point in renderOneCardTracked's existing sequence (flavor text before
+	// importCardForDeck; set-symbol/collector right after it; art
+	// offset/zoom only after autoFrame has run -- see the call sites below
+	// and deckImport.js's own generateDeck() loop, which uses this same
+	// ordering). A single function called from one place could not satisfy
+	// all of those timing constraints at once.
+
+	// Step: flavor text. Must run BEFORE importCardForDeck() -- that function
+	// reads #importFlavorTextDeck into #importFlavorText itself (see
+	// deckImport.js), so setting it any later would be a no-op for this card.
+	function applyFlavorTextSetting(render) {
+		if (!render || typeof render.flavor_text !== 'boolean') { return; }
+		var el = document.querySelector('#importFlavorTextDeck');
+		if (el) { el.checked = render.flavor_text; }
+	}
+
+	// Step: set-symbol tri-state (off / auto / code). Replaces the old bespoke
+	// "#set-symbol-code + fetchSetSymbol()" block with the real Import Deck
+	// controls + applyDeckSetSymbolOverride(), now that the deck-wide setting
+	// actually distinguishes "no symbol" from "each card's own set". When no
+	// render block is present at all, falls back to the legacy per-spec
+	// set_code behaviour so older manifests (or a bare proxsmithRenderCard
+	// call) keep working unchanged.
+	function applySetSymbolSetting(render, spec) {
+		if (!render) {
+			if (spec && spec.set_code) {
+				var legacyCodeEl = document.querySelector('#set-symbol-code');
+				if (legacyCodeEl) { legacyCodeEl.value = spec.set_code; }
+				if (typeof fetchSetSymbol === 'function') { fetchSetSymbol(); }
+			}
+			return;
+		}
+		var toggle = document.querySelector('#importSetSymbolToggleDeck');
+		var codeEl = document.querySelector('#importSetSymbolCodeDeck');
+		var lockEl = document.querySelector('#lockSetSymbolCode');
+		if (!toggle || !codeEl || !lockEl) { return; }
+		var mode = render.set_symbol_mode || 'auto';
+		if (mode === 'off') {
+			toggle.checked = false;
+		} else if (mode === 'code') {
+			toggle.checked = true;
+			codeEl.value = render.set_code || '';
+			lockEl.checked = true;
+		} else {
+			// "auto" -- each card's own set, per applyDeckSetSymbolOverride()'s
+			// own fallback when the code field is empty and the lock is off.
+			toggle.checked = true;
+			codeEl.value = '';
+			lockEl.checked = false;
+		}
+		if (typeof applyDeckSetSymbolOverride === 'function') { applyDeckSetSymbolOverride(); }
+	}
+
+	// Step: collector info. Deck-wide fields, with per-card rarity/artist
+	// overrides (spec.rarity / spec.artist) taking priority over the deck's
+	// "from card" checkboxes when present -- mirroring how spec.frame already
+	// overrides render.frame for framing. entryNumber is the 1-based position
+	// in the render batch, used for the auto-progressive collector number
+	// exactly like deckImport.js's own generateDeck() loop.
+	async function applyCollectorInfoSetting(render, entryNumber, spec) {
+		var toggle = document.querySelector('#deckCollectorToggle');
+		if (!toggle) { return; }
+		var collector = (render && render.collector) || {};
+		toggle.checked = !!(render && render.collector_info);
+		if (!toggle.checked) { return; }
+
+		var setField = function (id, value) {
+			var el = document.querySelector(id);
+			if (el) { el.value = value || ''; }
+		};
+
+		var autoNumEl = document.querySelector('#deckCollectorAutoNumber');
+		if (autoNumEl) { autoNumEl.checked = collector.auto_number !== false; }
+		setField('#deckCollectorNumber', collector.number);
+		setField('#deckCollectorSet', collector.set);
+		setField('#deckCollectorLanguage', collector.language);
+		setField('#deckCollectorYear', collector.year);
+		setField('#deckCollectorNote', collector.note);
+		setField('#deckCollectorNoteExtra1', collector.note_extra1);
+		setField('#deckCollectorNoteExtra2', collector.note_extra2);
+
+		var rarityFromCardEl = document.querySelector('#deckCollectorRarityFromCard');
+		if (spec && spec.rarity) {
+			if (rarityFromCardEl) { rarityFromCardEl.checked = false; }
+			setField('#deckCollectorRarity', spec.rarity);
+		} else {
+			if (rarityFromCardEl) { rarityFromCardEl.checked = collector.rarity_from_card !== false; }
+			setField('#deckCollectorRarity', '');
+		}
+
+		var artistFromCardEl = document.querySelector('#deckCollectorArtistFromCard');
+		if (spec && spec.artist) {
+			if (artistFromCardEl) { artistFromCardEl.checked = false; }
+			setField('#deckCollectorArtist', spec.artist);
+		} else {
+			if (artistFromCardEl) { artistFromCardEl.checked = collector.artist_from_card !== false; }
+			setField('#deckCollectorArtist', collector.artist_from_card === false ? collector.artist : '');
+		}
+
+		if (typeof applyDeckCollectorInfo === 'function') {
+			await applyDeckCollectorInfo(entryNumber || 1);
+		}
+	}
+
+	// Step: art offset/zoom. Per-card values (spec.art_offset_x/y/art_zoom)
+	// win over the deck defaults (render.art_offset_x/y/art_zoom); either can
+	// be absent, in which case the corresponding field is left blank (i.e.
+	// applyDeckArtOverride() leaves auto-fit's value untouched for it). Must
+	// run AFTER autoFrame(), not right after waitForCardReady() -- frame packs
+	// re-run their own autoFitArt() when applied (see deckImport.js's
+	// generateDeck() comment on this exact ordering), which would otherwise
+	// clobber the override.
+	function applyArtOverrideSetting(render, spec) {
+		var xEl = document.querySelector('#deckArtOffsetX');
+		var yEl = document.querySelector('#deckArtOffsetY');
+		var zoomEl = document.querySelector('#deckArtZoom');
+		if (!xEl || !yEl || !zoomEl) { return; }
+
+		var pick = function (specVal, renderVal) {
+			if (specVal !== undefined && specVal !== null) { return specVal; }
+			if (renderVal !== undefined && renderVal !== null) { return renderVal; }
+			return null;
+		};
+		var x = pick(spec && spec.art_offset_x, render && render.art_offset_x);
+		var y = pick(spec && spec.art_offset_y, render && render.art_offset_y);
+		var zoom = pick(spec && spec.art_zoom, render && render.art_zoom);
+
+		xEl.value = x !== null ? String(x) : '';
+		yEl.value = y !== null ? String(y) : '';
+		zoomEl.value = zoom !== null ? String(zoom) : '';
+
+		if (typeof applyDeckArtOverride === 'function') { applyDeckArtOverride(); }
+	}
+
 	// Build the .cardconjurer export object. Mirrors bulkDownloadZip() in creator-23.js:
 	// deep-clone the live card and strip the in-memory decoded images (they're huge and
 	// not part of the saved format — src paths are kept). Returns a plain object; the
@@ -152,7 +306,7 @@
 	// end-to-end via the proxsmith web app's per-card render feature (missing frame
 	// artwork + wrong font). Explicitly awaiting drawText() + both trackers removes the
 	// race entirely; the fixed sleeps stay as a defense-in-depth settle, not the only wait.
-	async function renderOneCard(spec) {
+	async function renderOneCard(spec, render, entryNumber) {
 		if (!spec || typeof spec.name !== 'string' || !spec.name.trim()) {
 			throw new Error('spec.name is required');
 		}
@@ -161,34 +315,33 @@
 		if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.start(); }
 
 		try {
-			return await renderOneCardTracked(spec);
+			return await renderOneCardTracked(spec, render, entryNumber);
 		} finally {
 			if (typeof ImageLoadTracker !== 'undefined') { ImageLoadTracker.stop(); }
 			if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.stop(); }
 		}
 	}
 
-	async function renderOneCardTracked(spec) {
+	async function renderOneCardTracked(spec, render, entryNumber) {
 		// 0. One-time per-session bootstrap so changeCardIndex() has a card.text to write into
 		//    (see ensureDefaultCardInitialized() above for why this is needed at all).
 		await ensureDefaultCardInitialized();
+
+		// 0b. Deck-wide flavor-text setting (issue #11) — must be set before
+		//     importCardForDeck() reads it. No-op when render is absent.
+		applyFlavorTextSetting(render);
 
 		// 1. Import from Scryfall (exact name). Fetches mana/type/P/T text and applies
 		//    Card Conjurer's own default Scryfall art.
 		await importCardForDeck(spec.name);
 
-		// 2. Optional per-card set-symbol code override.
-		//    NOTE: we intentionally do NOT call applyDeckSetSymbolOverride() here — despite
-		//    its name it is driven by the Import Deck tab's #importSetSymbolToggleDeck /
-		//    #importSetSymbolCodeDeck controls (not by #set-symbol-code), and with the tab
-		//    in its default state it would clear the symbol. We instead drive the SAME
-		//    underlying mechanism it uses: set #set-symbol-code + fetchSetSymbol(). When
-		//    set_code is absent we leave whatever the import assigned by default.
-		if (spec.set_code) {
-			var setCodeEl = document.querySelector('#set-symbol-code');
-			if (setCodeEl) { setCodeEl.value = spec.set_code; }
-			if (typeof fetchSetSymbol === 'function') { fetchSetSymbol(); }
-		}
+		// 1b. Set-symbol tri-state (off/auto/code) + collector info (issue #11).
+		//     Both reuse deckImport.js's own Import Deck engine functions, driven
+		//     via the same DOM fields the human tab uses, so behaviour matches
+		//     exactly. Falls back to the legacy per-spec set_code path when no
+		//     render block is present (see applySetSymbolSetting()).
+		applySetSymbolSetting(render, spec);
+		await applyCollectorInfoSetting(render, entryNumber, spec);
 
 		// 3. Optional art override. Only touch art when a data URI is supplied — otherwise
 		//    keep Card Conjurer's Scryfall-fetched default art.
@@ -251,6 +404,13 @@
 				await sleep(AUTOFRAME_TIMEOUT_MS);
 			}
 		}
+
+		// 5b. Art offset/zoom (deck default + per-card override, issue #11). Must run
+		//     AFTER frame application, not right after waitForCardReady() -- frame packs
+		//     re-run their own art auto-fit when applied, which would otherwise clobber
+		//     this (see applyArtOverrideSetting()'s own comment, mirroring
+		//     deckImport.js's generateDeck() ordering).
+		applyArtOverrideSetting(render, spec);
 
 		// 6. Pre-warm every font this card's CURRENT text fields need, BEFORE the real
 		//    paint pass below.
@@ -348,10 +508,12 @@
 	// --- Public entry points --------------------------------------------------
 
 	// Single card. Never throws; resolves to { ok:true, png_base64, cardconjurer_json }
-	// or { ok:false, error }.
+	// or { ok:false, error }. ``spec.render`` is an optional deck-settings block
+	// (same shape as manifest.render below) for callers that want issue #11
+	// settings applied to a lone card; absent for a bare {name: "..."} call.
 	window.proxsmithRenderCard = async function (spec) {
 		try {
-			var result = await renderOneCard(spec);
+			var result = await renderOneCard(spec, spec && spec.render, 1);
 			return { ok: true, png_base64: result.png_base64, cardconjurer_json: result.cardconjurer_json };
 		} catch (err) {
 			return { ok: false, error: (err && err.message) ? err.message : String(err) };
@@ -360,14 +522,19 @@
 
 	// Batch. Resolves to an array SAME LENGTH AND ORDER as manifest.cards. Each card is
 	// rendered sequentially and isolated in try/catch so one failure never aborts the rest.
+	// ``manifest.render`` (optional -- see proxsmith/adapters/render_cardconjurer.py's
+	// build_manifest()) carries the deck-wide render settings from issue #11; each
+	// card's own spec carries its resolved per-card overrides (art_offset_x/y,
+	// art_zoom, artist, rarity).
 	window.proxsmithRenderDeck = async function (manifest) {
 		var cards = (manifest && Array.isArray(manifest.cards)) ? manifest.cards : [];
+		var render = manifest && manifest.render;
 		var results = [];
 		for (var i = 0; i < cards.length; i++) {
 			var spec = cards[i];
 			var cardCode = spec ? spec.code : undefined;
 			try {
-				var result = await renderOneCard(spec);
+				var result = await renderOneCard(spec, render, i + 1);
 				results.push({
 					card_code: cardCode,
 					ok: true,
