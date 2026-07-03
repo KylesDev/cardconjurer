@@ -200,16 +200,56 @@
 		// 4. Wait for art + frames to stabilize before framing.
 		await waitForCardReady();
 
-		// 5. Optional frame application. If spec.frame is falsy, do NOT call autoFrame() at
+		// 5. Optional frame application. If spec.frame is falsy, do NOT apply a frame at
 		//    all — leave the card on whatever frame the import assigned.
+		//
+		//    Why this calls window.autoElementFrame() directly instead of autoFrame()
+		//    (non-obvious -- found by reproducing against the REAL remote instance, not
+		//    just a local loopback checkout -- keep this):
+		//
+		//    autoFrame()'s own IMPORT_FRAME_CONFIG branch (js/autoFrame.js) is
+		//    fire-and-forget -- `packReady.then(function () { window.autoElementFrame(...) })`
+		//    with no returned promise -- so a caller has NO way to know when framing has
+		//    actually finished. The old code compensated with a fixed
+		//    `await sleep(AUTOFRAME_TIMEOUT_MS)` (1500ms), which was usually enough
+		//    against a local-loopback cardconjurer/ checkout (pack script load is
+		//    near-instant) but reliably NOT enough against a real deployed instance over
+		//    a real network -- reproduced end-to-end: card.frames stayed empty (no
+		//    border/texture at all, and since there's no frame there's no art-window
+		//    bounds either, so art fills the whole canvas unclipped instead of sitting in
+		//    its normal window). EVERY frame proxsmith itself ever renders with
+		//    (M15Nickname, IkoNicknameShort, PromoRegular-1, IkoShort) is in
+		//    IMPORT_FRAME_CONFIG, so this covers the real path completely; a frame NOT in
+		//    that config (hypothetical, not used by proxsmith today) falls back to the
+		//    original autoFrame()+fixed-sleep behavior below.
+		//
+		//    This also fixes a second, independent bug: the OLD code set the global
+		//    `window.deckImportNickname` then immediately cleared it back to '' on the
+		//    very next (synchronous) line -- autoElementFrame() only reads that global
+		//    from INSIDE the async packReady.then() callback, which always ran after the
+		//    clear, so the nickname text field was silently always empty. Passing
+		//    `spec.nickname` as a real function argument (autoElementFrame's own last
+		//    parameter) removes the global/timing dependency entirely.
 		if (spec.frame) {
 			await ensureFramePackLoaded(spec.frame);
-			window.deckImportNickname = spec.nickname || '';
-			var autoFrameEl = document.querySelector('#autoFrame');
-			if (autoFrameEl) { autoFrameEl.value = spec.frame; }
-			autoFrame();
-			window.deckImportNickname = '';
-			await sleep(AUTOFRAME_TIMEOUT_MS);
+			var frameConfig = window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[spec.frame];
+			if (frameConfig && typeof window.autoElementFrame === 'function') {
+				var frameColors = typeof window.detectAutoFrameColors === 'function'
+					? window.detectAutoFrameColors(card)
+					: [];
+				await window.autoElementFrame(
+					frameConfig, frameColors,
+					card.text.mana.text, card.text.type.text, card.text.pt.text,
+					spec.nickname || ''
+				);
+			} else {
+				window.deckImportNickname = spec.nickname || '';
+				var autoFrameEl = document.querySelector('#autoFrame');
+				if (autoFrameEl) { autoFrameEl.value = spec.frame; }
+				autoFrame();
+				window.deckImportNickname = '';
+				await sleep(AUTOFRAME_TIMEOUT_MS);
+			}
 		}
 
 		// 6. Pre-warm every font this card's CURRENT text fields need, BEFORE the real
