@@ -134,11 +134,41 @@
 
 	// The single shared implementation used by BOTH entry points. Does the real work
 	// for one card; may throw (the entry points catch and convert to { ok:false }).
+	//
+	// Why ImageLoadTracker/FontLoadTracker (non-obvious — keep it): the ONLY other place
+	// in this codebase that reads cardCanvas back programmatically (the "Download all as
+	// ZIP" bulk export, creator-23.js's bulkDownloadZip) starts both trackers, calls
+	// drawText(), then awaits Promise.all([ImageLoadTracker.waitForAll(),
+	// FontLoadTracker.waitForAll()]) before its OWN drawCard() -- it never trusts a fixed
+	// sleep. This function used to (fixed AUTOFRAME_TIMEOUT_MS/CANVAS_RENDER_TIMEOUT_MS
+	// sleeps only, no tracker), which mostly worked interactively but not headless: (1)
+	// drawTextBuffer() (called from deep inside the import/autoFrame chain) only
+	// SCHEDULES the real drawText() 500ms later via setTimeout, and Playwright's headless
+	// pages can throttle background-tab timers past that window; (2) even when drawText()
+	// does fire, its own @font-face files (10+ per session, fetched over the network for a
+	// remote instance) can still be mid-download when the fixed sleep expires. Either way
+	// renderApi.js's own drawCard() call read a stale/blank frameCanvas and a textCanvas
+	// drawn with the browser's fallback font instead of the MTG font files -- reproduced
+	// end-to-end via the proxsmith web app's per-card render feature (missing frame
+	// artwork + wrong font). Explicitly awaiting drawText() + both trackers removes the
+	// race entirely; the fixed sleeps stay as a defense-in-depth settle, not the only wait.
 	async function renderOneCard(spec) {
 		if (!spec || typeof spec.name !== 'string' || !spec.name.trim()) {
 			throw new Error('spec.name is required');
 		}
 
+		if (typeof ImageLoadTracker !== 'undefined') { ImageLoadTracker.start(); }
+		if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.start(); }
+
+		try {
+			return await renderOneCardTracked(spec);
+		} finally {
+			if (typeof ImageLoadTracker !== 'undefined') { ImageLoadTracker.stop(); }
+			if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.stop(); }
+		}
+	}
+
+	async function renderOneCardTracked(spec) {
 		// 0. One-time per-session bootstrap so changeCardIndex() has a card.text to write into
 		//    (see ensureDefaultCardInitialized() above for why this is needed at all).
 		await ensureDefaultCardInitialized();
@@ -182,9 +212,93 @@
 			await sleep(AUTOFRAME_TIMEOUT_MS);
 		}
 
-		// 6. Render to canvas and read back PNG.
-		drawCard();
+		// 6. Pre-warm every font this card's CURRENT text fields need, BEFORE the real
+		//    paint pass below.
+		//
+		//    Why (non-obvious, found by tracing a real headless render -- keep it):
+		//    writeText() (called per text field, from inside drawText()) does
+		//    `var textFont = textObject.font || 'mplantin'; FontLoadTracker.track(textFont);`
+		//    THEN IMMEDIATELY sets `lineContext.font = ... + textFont + ...` and paints --
+		//    in the SAME synchronous call. Tracking a font and waiting for
+		//    FontLoadTracker.waitForAll() AFTERWARDS (as step 7 below does, and as the only
+		//    other caller of this tracker -- creator-23.js's bulkDownloadZip -- also does)
+		//    only guarantees the font is ready for the NEXT paint, not the one that just
+		//    registered it: canvas silently keeps whatever font was already current when
+		//    you assign an unloaded font-family string, i.e. the browser's default
+		//    (confirmed: cardContext.font read back after a from-cold render was literally
+		//    "10px sans-serif"). bulkDownloadZip "works" only because every card after the
+		//    first reuses fonts the previous card's cold paint already triggered loading of
+		//    -- the browser's font cache masks the very same bug for cards 2..N in one
+		//    session. A single-card render (proxsmith's per-card "Render this card") is
+		//    always session-cold, so it hits this every time. Fix: discover every distinct
+		//    font this card's CURRENT card.text needs and document.fonts.load() them all
+		//    BEFORE the paint that actually needs them ready, not after.
+		if (typeof card !== 'undefined' && card.text && typeof document !== 'undefined' && document.fonts) {
+			var neededFonts = new Set();
+			Object.values(card.text).forEach(function (t) { neededFonts.add((t && t.font) || 'mplantin'); });
+			await Promise.all(
+				Array.from(neededFonts).map(function (f) {
+					return document.fonts.load('12px ' + f).catch(function () { /* best-effort */ });
+				})
+			);
+		}
+
+		// 7. Deterministically (re)draw the text layer -- NOT via drawTextBuffer(), which
+		//    only schedules drawText() 500ms later and would race the rest of this
+		//    function in a headless/backgrounded page (see the module-level comment on
+		//    renderOneCard). Fonts are pre-warmed (step 6) so THIS paint uses them
+		//    correctly -- unlike the pre-fix version, we don't depend on a subsequent
+		//    waitForAll() to fix up a paint that already happened. drawText() itself calls
+		//    drawFrames()/drawCard() at its own tail in some cases; harmless to also do so
+		//    explicitly below.
+		if (typeof drawText === 'function') { await drawText(); }
+		if (typeof drawFrames === 'function') { drawFrames(); }
+
+		// 8. Wait for every image (frame art, set symbol, watermark, ...) still in flight,
+		//    THEN read the canvas back. This is what the fixed sleeps alone could not
+		//    guarantee.
+		var waits = [];
+		if (typeof ImageLoadTracker !== 'undefined') { waits.push(ImageLoadTracker.waitForAll()); }
+		if (typeof FontLoadTracker !== 'undefined') { waits.push(FontLoadTracker.waitForAll()); }
+		if (waits.length) { await Promise.all(waits); }
 		await sleep(CANVAS_RENDER_TIMEOUT_MS);
+
+		// 8b. ImageLoadTracker.track(src) (used by addFrame() for every frame/mask image,
+		//     see creator-23.js) fetches `src` into its OWN throwaway Image object purely
+		//     to produce a waitable promise -- it is NOT the same Image instance addFrame()
+		//     actually assigns to card.frames[i].image (whose OWN onload is what calls
+		//     drawFrames() and actually paints frameCanvas). The browser cache makes the
+		//     throwaway copy resolve around the same time as the real one, but "around the
+		//     same time" is not "happens-after": waitForAll() above can resolve before the
+		//     real image's onload -> drawFrames() has actually run, so the drawCard() below
+		//     would composite a frameCanvas that's still one paint behind (confirmed by
+		//     reproducing headless: card.frames[i].image.complete was already true and
+		//     frameCanvas itself, read in isolation, was already correct at that point --
+		//     yet the cardCanvas this function returned was missing the frame entirely; a
+		//     manual drawFrames()+drawCard() called moments later, with nothing else
+		//     changed, produced the correct output). ALSO tried polling
+		//     `image.complete` -- didn't fix it, because `.complete` can be `true` before
+		//     the browser has actually finished DECODING the bitmap into something
+		//     drawImage() can use (a documented gap; HTMLImageElement.decode() is the
+		//     spec's own answer to exactly this ambiguity). Decode the REAL image objects
+		//     directly instead of trusting the tracker for this specific layer, then
+		//     repaint once more ourselves so drawCard() below is guaranteed to run after,
+		//     not racing, the last frame image's own onload.
+		if (typeof card !== 'undefined' && Array.isArray(card.frames)) {
+			var frameImages = card.frames.map(function (f) { return f && f.image; }).filter(Boolean);
+			await Promise.all(
+				frameImages.map(function (img) {
+					return (typeof img.decode === 'function' ? img.decode() : Promise.resolve()).catch(function () {
+						/* best-effort -- an image that fails to decode just stays whatever drawFrames() already drew */
+					});
+				})
+			);
+			if (typeof drawFrames === 'function') { drawFrames(); }
+			await sleep(50);
+		}
+
+		// 9. Render to canvas and read back PNG.
+		drawCard();
 		var dataUrl = cardCanvas.toDataURL('image/png');
 		var pngBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
 
