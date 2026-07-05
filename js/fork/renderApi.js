@@ -42,9 +42,15 @@
  * deckImport.js (all `defer`). See docs/fork/render-api.md.
  *
  * Public contract (a driver is built against this — do not change silently):
- *   window.proxsmithRenderCard(spec)   -> Promise<{ ok, png_base64, cardconjurer_json } | { ok:false, error }>
+ *   window.proxsmithRenderCard(spec)   -> Promise<{ ok, png_base64, cardconjurer_json, warning? } | { ok:false, error }>
  *   window.proxsmithRenderDeck(manifest) -> Promise<Array< per-card result >>
  *   window.proxsmithRenderReady        -> true once this file has finished loading
+ *
+ * ``warning`` (issue #16): present, on an otherwise-``ok:true`` result, only
+ * when the requested artwork failed to load in time (or fell back to
+ * upstream's own default/blank art) -- see waitForArtSource()'s doc comment.
+ * Its absence does NOT guarantee the requested art rendered correctly, only
+ * that this specific known failure mode wasn't detected.
  * ============================================================================
  */
 (function () {
@@ -115,22 +121,31 @@
 	// chain. Mirrors the poll in generateSingleCard(): require art.complete AND the src
 	// to be the one we set AND card.artSource === art.src (that last equality only holds
 	// once artEdited() has run, not merely when art.complete flips true).
+	//
+	// Resolves { ok: true } once that condition holds, or { ok: false } if
+	// ART_LOAD_TIMEOUT_MS elapses first (issue #16: previously this resolved
+	// silently either way, so a caller had no way to tell "art loaded" from
+	// "gave up waiting" -- the render would just quietly finish with whatever
+	// art.src happened to be, including upstream's own onerror fallback to
+	// /img/blank.png (creator-23.js). See renderOneCardTracked's own extra
+	// art.src check right after the await, which catches that onerror case
+	// too (it can finish -- i.e. art.complete -- well within the timeout).
 	function waitForArtSource(expectedSrc) {
 		return new Promise(function (resolve) {
 			if (art.complete && art.src === expectedSrc && card.artSource === art.src) {
-				resolve();
+				resolve({ ok: true });
 				return;
 			}
 			var checkInterval = setInterval(function () {
 				if (art.complete && art.src === expectedSrc && card.artSource === art.src) {
 					clearInterval(checkInterval);
-					resolve();
+					resolve({ ok: true });
 				}
 			}, ART_LOAD_POLL_INTERVAL_MS);
 			// Timeout fallback so a card can never hang the render.
 			setTimeout(function () {
 				clearInterval(checkInterval);
-				resolve();
+				resolve({ ok: false });
 			}, ART_LOAD_TIMEOUT_MS);
 		});
 	}
@@ -345,9 +360,21 @@
 
 		// 3. Optional art override. Only touch art when a data URI is supplied — otherwise
 		//    keep Card Conjurer's Scryfall-fetched default art.
+		//
+		//    Issue #16: a selected-artwork URL/data URI that the browser can't load
+		//    (unreachable endpoint, bucket CORS, or just a slow/stalled fetch) used to
+		//    fail SILENTLY -- upstream's own art.onerror handler (creator-23.js) resets
+		//    art.src to '/img/blank.png' and the render just... finishes, with default
+		//    or blank art, no signal anywhere. `artWarning` (checked below, surfaced in
+		//    the returned result) turns that into a loud, per-card warning instead.
+		var artWarning = null;
 		if (spec.art_data_uri) {
 			uploadArt(spec.art_data_uri, 'autoFit');
-			await waitForArtSource(spec.art_data_uri);
+			var artWait = await waitForArtSource(spec.art_data_uri);
+			if (!artWait.ok || art.src !== spec.art_data_uri) {
+				artWarning = 'selected artwork failed to load (timed out or fell back to ' +
+					'default/blank art) -- rendered card may not show the requested artwork';
+			}
 		}
 
 		// 4. Wait for art + frames to stabilize before framing.
@@ -502,7 +529,9 @@
 		var dataUrl = cardCanvas.toDataURL('image/png');
 		var pngBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
 
-		return { png_base64: pngBase64, cardconjurer_json: exportCardJson() };
+		var result = { png_base64: pngBase64, cardconjurer_json: exportCardJson() };
+		if (artWarning) { result.warning = artWarning; }
+		return result;
 	}
 
 	// --- Public entry points --------------------------------------------------
@@ -514,7 +543,9 @@
 	window.proxsmithRenderCard = async function (spec) {
 		try {
 			var result = await renderOneCard(spec, spec && spec.render, 1);
-			return { ok: true, png_base64: result.png_base64, cardconjurer_json: result.cardconjurer_json };
+			var out = { ok: true, png_base64: result.png_base64, cardconjurer_json: result.cardconjurer_json };
+			if (result.warning) { out.warning = result.warning; }
+			return out;
 		} catch (err) {
 			return { ok: false, error: (err && err.message) ? err.message : String(err) };
 		}
@@ -535,12 +566,14 @@
 			var cardCode = spec ? spec.code : undefined;
 			try {
 				var result = await renderOneCard(spec, render, i + 1);
-				results.push({
+				var entry = {
 					card_code: cardCode,
 					ok: true,
 					png_base64: result.png_base64,
 					cardconjurer_json: result.cardconjurer_json
-				});
+				};
+				if (result.warning) { entry.warning = result.warning; }
+				results.push(entry);
 			} catch (err) {
 				results.push({
 					card_code: cardCode,
