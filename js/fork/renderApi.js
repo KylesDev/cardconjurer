@@ -29,7 +29,7 @@
  * (flavor_text, set_symbol_mode/set_code, collector.*, art_offset_x/y,
  * art_zoom -- see proxsmith/adapters/render_cardconjurer.py's build_manifest())
  * plus, per card, resolved override fields (art_offset_x/y, art_zoom, artist,
- * rarity -- proxsmith/core/model.py's Deck.art_override_for()/etc). This file
+ * rarity, collector_* -- proxsmith/core/model.py's Deck resolvers). This file
  * does not reimplement any of that logic -- it only sets the same DOM fields
  * the human "Import Deck" tab uses, then calls the SAME deckImport.js engine
  * functions (applyDeckSetSymbolOverride / applyDeckCollectorInfo /
@@ -207,33 +207,42 @@
 		if (typeof applyDeckSetSymbolOverride === 'function') { applyDeckSetSymbolOverride(); }
 	}
 
-	// Step: collector info. Deck-wide fields, with per-card rarity/artist
-	// overrides (spec.rarity / spec.artist) taking priority over the deck's
+	// Step: collector info. Deck-wide fields, with per-card collector fields,
+	// rarity, and artist overrides taking priority over the deck's
 	// "from card" checkboxes when present -- mirroring how spec.frame already
-	// overrides render.frame for framing. entryNumber is the 1-based position
-	// in the render batch, used for the auto-progressive collector number
-	// exactly like deckImport.js's own generateDeck() loop.
+	// overrides render.frame for framing. entryNumber is only the render-batch
+	// position for deck-wide Card Conjurer auto-number fallback; proxsmith
+	// supplies deck-position numbers through spec.collector_number.
 	async function applyCollectorInfoSetting(render, entryNumber, spec) {
 		var toggle = document.querySelector('#deckCollectorToggle');
 		if (!toggle) { return; }
 		var collector = (render && render.collector) || {};
-		toggle.checked = !!(render && render.collector_info);
+		var hasSpecCollectorInfo = spec && spec.collector_info !== undefined && spec.collector_info !== null;
+		toggle.checked = hasSpecCollectorInfo ? !!spec.collector_info : !!(render && render.collector_info);
 		if (!toggle.checked) { return; }
 
 		var setField = function (id, value) {
 			var el = document.querySelector(id);
 			if (el) { el.value = value || ''; }
 		};
+		var pick = function (specValue, deckValue) {
+			return specValue !== undefined && specValue !== null ? specValue : deckValue;
+		};
 
 		var autoNumEl = document.querySelector('#deckCollectorAutoNumber');
-		if (autoNumEl) { autoNumEl.checked = collector.auto_number !== false; }
-		setField('#deckCollectorNumber', collector.number);
-		setField('#deckCollectorSet', collector.set);
-		setField('#deckCollectorLanguage', collector.language);
-		setField('#deckCollectorYear', collector.year);
-		setField('#deckCollectorNote', collector.note);
-		setField('#deckCollectorNoteExtra1', collector.note_extra1);
-		setField('#deckCollectorNoteExtra2', collector.note_extra2);
+		if (spec && typeof spec.collector_number === 'string' && spec.collector_number !== '') {
+			if (autoNumEl) { autoNumEl.checked = false; }
+			setField('#deckCollectorNumber', spec.collector_number);
+		} else {
+			if (autoNumEl) { autoNumEl.checked = collector.auto_number !== false; }
+			setField('#deckCollectorNumber', collector.number);
+		}
+		setField('#deckCollectorSet', pick(spec && spec.collector_set, collector.set));
+		setField('#deckCollectorLanguage', pick(spec && spec.collector_language, collector.language));
+		setField('#deckCollectorYear', pick(spec && spec.collector_year, collector.year));
+		setField('#deckCollectorNote', pick(spec && spec.collector_note, collector.note));
+		setField('#deckCollectorNoteExtra1', pick(spec && spec.collector_note_extra1, collector.note_extra1));
+		setField('#deckCollectorNoteExtra2', pick(spec && spec.collector_note_extra2, collector.note_extra2));
 
 		var rarityFromCardEl = document.querySelector('#deckCollectorRarityFromCard');
 		if (spec && spec.rarity) {
@@ -556,7 +565,7 @@
 	// ``manifest.render`` (optional -- see proxsmith/adapters/render_cardconjurer.py's
 	// build_manifest()) carries the deck-wide render settings from issue #11; each
 	// card's own spec carries its resolved per-card overrides (art_offset_x/y,
-	// art_zoom, artist, rarity).
+	// art_zoom, artist, rarity, collector_*).
 	window.proxsmithRenderDeck = async function (manifest) {
 		var cards = (manifest && Array.isArray(manifest.cards)) ? manifest.cards : [];
 		var render = manifest && manifest.render;
