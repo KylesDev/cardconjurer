@@ -428,6 +428,75 @@ function parseImageFilename(filename) {
 // SECTION 5: SCRYFALL HELPER (from creator-23.js)
 // ============================================================================
 
+// Why this exists (proxsmith integration only):
+// proxsmith renders each face of a double-faced card (DFC) as its own separate
+// card, addressed by that face's exact single-face name (e.g. deck code D21-030
+// = "Bala Ged Recovery", D21-031 = "Bala Ged Sanctuary" -- the two faces of one
+// physical Zendikar Rising MDFC). It calls fetchScryfallCardByExactName() with
+// that single face name.
+//
+// Scryfall, however, has no "give me just this face" endpoint: /cards/named
+// always returns the WHOLE card object for a transform / modal_dfc / reversible
+// card. The top-level object's `name` is the combined "Front // Back", and
+// fields that differ per face (mana_cost, type_line, image_uris, oracle_text,
+// colors, power/toughness, etc.) are ABSENT at the top level -- they only exist
+// inside `card_faces[0]` / `card_faces[1]`. Feeding that raw object into
+// CardConjurer's importCard() leaves mana cost/type blank and the name reading
+// "A // B", so the card never auto-completes.
+//
+// Split, adventure, and flip cards are a different shape and must NOT be
+// touched here: their two "faces" share a single printed image and the
+// top-level object already carries the correct combined mana_cost/type_line/
+// image_uris for the one physical card face proxsmith actually wants (each
+// half is still one image, not two). The reliable way to tell them apart is
+// image_uris: true DFC faces each carry their OWN `image_uris` (because each
+// face is visually a separate card face/back), while split/adventure/flip
+// faces do not (only the top-level card has image_uris). So: flatten only
+// when the matched face has its own image_uris.
+//
+// flattenDfcFaceIfNeeded() takes the raw Scryfall card plus the exact face
+// name that was requested and, if it looks like a true DFC face match, returns
+// a flattened object built from a shallow copy of the top-level card (keeps
+// top-level-only fields like set/set_name/collector_number/released_at/rarity/
+// lang) with the matching face's own fields overlaid on top. Any other shape
+// (normal single-faced card, split/adventure/flip, or no matching face name)
+// is returned unchanged. This function is defensive by design -- Scryfall's
+// card_faces entries can omit fields (e.g. a land back face has no mana_cost)
+// -- and never throws; on anything unexpected it just hands back the original
+// card so a normal (non-DFC) render is never affected.
+function flattenDfcFaceIfNeeded(card, cardName) {
+	try {
+		if (!card || !Array.isArray(card.card_faces) || card.card_faces.length === 0) {
+			return card;
+		}
+
+		const face = card.card_faces.find(f => f && f.name === cardName);
+		if (!face || !face.image_uris) {
+			// No exact-name face match, or the faces don't carry their own
+			// images (split/adventure/flip) -- leave the card untouched.
+			return card;
+		}
+
+		const flattened = Object.assign({}, card);
+		const FACE_OVERRIDE_FIELDS = [
+			'name', 'mana_cost', 'type_line', 'oracle_text', 'colors',
+			'color_indicator', 'power', 'toughness', 'loyalty', 'flavor_text',
+			'image_uris', 'artist', 'illustration_id', 'printed_name'
+		];
+		for (const key of FACE_OVERRIDE_FIELDS) {
+			if (face[key] !== undefined) {
+				flattened[key] = face[key];
+			}
+		}
+
+		return flattened;
+	} catch (error) {
+		// Never let a flatten bug break a render -- fall back to the raw card.
+		console.warn('flattenDfcFaceIfNeeded: falling back to unflattened card', error);
+		return card;
+	}
+}
+
 function fetchScryfallCardByExactName(cardName) {
 	return new Promise((resolve, reject) => {
 		const xhttp = new XMLHttpRequest();
@@ -436,8 +505,12 @@ function fetchScryfallCardByExactName(cardName) {
 				if (this.status == 200) {
 					try {
 						const card = JSON.parse(this.responseText);
+						// Flatten true DFC faces (transform/modal_dfc/reversible) down to
+						// the single requested face -- see flattenDfcFaceIfNeeded() above.
+						// Split/adventure/flip cards and normal cards pass through as-is.
+						const resolvedCard = flattenDfcFaceIfNeeded(card, cardName);
 						// Wrap single card in array to maintain compatibility with existing code
-						resolve([card]);
+						resolve([resolvedCard]);
 					} catch (error) {
 						reject(new Error(`Failed to parse card data: ${error.message}`));
 					}
