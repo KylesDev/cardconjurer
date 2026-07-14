@@ -65,17 +65,24 @@ let singleImageUpload = null; // Global variable to store single image upload
 // Import-only polish: long auto-imported card names / type lines would otherwise overlap the
 // mana cost or run under the set symbol, and long rules text can run under the Power/Toughness
 // plate (this is stock frame behaviour — the text boxes are as wide/tall as on the "Regular"
-// frame, which was never designed to reserve room for auto-imported content). Here we narrow/
-// shorten the relevant text BOXES so writeText's shrink-to-fit makes the text smaller (it is
-// never clipped) instead of overlapping its neighbour. Content-aware: space is reserved only
-// when a mana cost / set symbol / PT plate is actually present, and sized to how much room it
-// actually takes. Widths/height are clamped from a stored default so repeated calls don't
-// compound. Applies during Import Deck generation AND proxsmith's headless render API path
-// (window.__ccRenderApiActive, set for the duration of a card render by js/fork/renderApi.js —
-// that path never sets deckGenerationState.isGenerating, which is Import Deck-only). Manual
-// interactive editing of a single card in the Card Conjurer UI sets neither flag, so it remains
-// completely untouched.
-window.clampImportTextWidths = function clampImportTextWidths(topNameKey) {
+// frame, which was never designed to reserve room for auto-imported content). Title/type get
+// narrowed BOXES so writeText's own shrink-to-fit makes the text smaller (never clipped)
+// instead of overlapping its neighbour. Rules text vs. the PT plate instead keeps the box at
+// FULL height and forces an early line break so the last line dodges the plate while staying
+// full-size -- see dodgePtPlateWithLineBreaks() below; only falls back to shrinking the box if
+// no break clears the plate. Content-aware: space/breaks are applied only when a mana cost /
+// set symbol / PT plate is actually present. Widths/height/text are clamped from a stored
+// pristine default so repeated calls don't compound. Applies during Import Deck generation AND
+// proxsmith's headless render API path (window.__ccRenderApiActive, set for the duration of a
+// card render by js/fork/renderApi.js — that path never sets deckGenerationState.isGenerating,
+// which is Import Deck-only). Manual interactive editing of a single card in the Card Conjurer
+// UI sets neither flag, so it remains completely untouched.
+//
+// Async: the PT-plate dodge probes candidate strings by actually painting them to a scratch
+// canvas (writeText() is only synchronous internally today -- js/creator-23.js's own drawText()
+// already `await`s it defensively, presumably in case that changes -- so this function follows
+// the same defensive pattern). Every caller must await this.
+window.clampImportTextWidths = async function clampImportTextWidths(topNameKey) {
 	var driving = (typeof deckGenerationState !== 'undefined' && deckGenerationState.isGenerating)
 		|| window.__ccRenderApiActive;
 	if (!driving) { return; }
@@ -153,22 +160,25 @@ window.clampImportTextWidths = function clampImportTextWidths(topNameKey) {
 		});
 		var ptEl = ptFrameIdx >= 0 ? card.frames[ptFrameIdx] : null;
 		if (!ptEl) {
-			// No PT plate on this render -- restore full height (undoes any shrink applied
-			// while a stale/previous card's PT frame was still sitting in card.frames).
+			// No PT plate on this render -- restore full height AND the pristine text (undoes
+			// any shrink/line-break applied while a stale/previous card's PT frame was still
+			// sitting in card.frames).
 			if (rulesField._importFullHeight != null) { rulesField.height = rulesField._importFullHeight; }
+			// Only undo a break WE injected: restore the pristine text solely when the field
+			// still holds exactly the string we last derived from it. Restoring unconditionally
+			// would write a previous card's rules over this one whenever card.text.rules turns
+			// out to be a reused object (see dodgePtPlateWithLineBreaks's own cache comment).
+			if (rulesField._importOriginalText != null && rulesField._importDerivedText === rulesField.text) {
+				rulesField.text = rulesField._importOriginalText;
+				rulesField._importDerivedText = rulesField._importOriginalText;
+			}
 		} else if (!ptEl.bounds) {
 			// Plate present but its frame element carries no bounds -- don't guess a position;
 			// leave the rules box exactly as it is.
 		} else {
 			if (rulesField._importFullHeight == null) { rulesField._importFullHeight = rulesField.height; }
-			var fullH = rulesField._importFullHeight;
 			var GAP = 0.004; // small clearance so the last text line doesn't kiss the plate edge
-			var desiredBottom = ptEl.bounds.y - GAP;
-			if ((rulesField.y || 0) + fullH > desiredBottom) {
-				rulesField.height = Math.max(0.05, desiredBottom - (rulesField.y || 0));
-			} else {
-				rulesField.height = fullH; // plenty of clearance -> full height available
-			}
+			await dodgePtPlateWithLineBreaks(rulesField, ptEl, GAP);
 		}
 	}
 
@@ -176,6 +186,168 @@ window.clampImportTextWidths = function clampImportTextWidths(topNameKey) {
 	// whose earlier scheduled render may have already fired before these width changes.
 	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
 };
+
+// ----------------------------------------------------------------------------
+// PT-plate dodge: ink-oracle + bounded {lns} search (used by clampImportTextWidths above)
+// ----------------------------------------------------------------------------
+
+// Scratch canvas for the ink-oracle probes below, module-level so it's created once and
+// reused across every probe of every card (a bounded search is up to ~11 writeText() calls
+// per card -- allocating a full-card-sized canvas per probe would be wasteful). Sized to
+// mirror the real textCanvas (js/creator-23.js: sizeCanvas('text'), default width/height =
+// card.width/height inflated by the marginX/marginY bleed border) so scaleX/scaleY/scaleWidth/
+// scaleHeight -- which bake that same margin into every pixel coordinate -- line up exactly
+// with what a real drawText() would paint. Resized lazily if card dimensions ever change
+// (different card size mid-session), not on every probe.
+var __ptDodgeScratchCanvas = null;
+var __ptDodgeScratchContext = null;
+function getPtDodgeScratchContext() {
+	var w = Math.round(card.width * (1 + 2 * (card.marginX || 0)));
+	var h = Math.round(card.height * (1 + 2 * (card.marginY || 0)));
+	if (!__ptDodgeScratchCanvas) {
+		__ptDodgeScratchCanvas = document.createElement('canvas');
+		__ptDodgeScratchContext = __ptDodgeScratchCanvas.getContext('2d');
+	}
+	if (__ptDodgeScratchCanvas.width !== w || __ptDodgeScratchCanvas.height !== h) {
+		__ptDodgeScratchCanvas.width = w;
+		__ptDodgeScratchCanvas.height = h;
+	}
+	return __ptDodgeScratchContext;
+}
+
+// Ink-oracle: answers "does THIS candidate rules string actually collide with the PT plate?"
+// by painting ONLY the rules field, in isolation, to the scratch canvas -- writeText() takes an
+// arbitrary target context (js/creator-23.js ~line 1436, `function writeText(textObject,
+// targetContext)`), so this never touches the real textCanvas/textContext the live card paints
+// to. Reads back the plate's own bounds rect (not a hardcoded geometry guess) with a small
+// clearance margin, same GAP idea as the old height-clamp. "Collides" = any pixel in that rect
+// with alpha above a small threshold, to ignore antialiasing fringe. Guarded: caller only
+// invokes this once rulesField/ptEl/ptEl.bounds are all confirmed present, but the guards stay
+// here too so this is safe to call standalone.
+async function rulesTextCollidesWithPlate(rulesField, candidateText, ptEl) {
+	if (!rulesField || !ptEl || !ptEl.bounds) { return false; }
+	var ctx = getPtDodgeScratchContext();
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	// Shallow clone with the candidate text swapped in -- writeText() only reads textObject
+	// fields, but clone anyway so probing can never mutate the real field.
+	var probeField = Object.assign({}, rulesField, { text: candidateText });
+	await writeText(probeField, ctx);
+	var CLEARANCE = 0.004; // same small clearance idea as the height-clamp's own GAP
+	var clearW = scaleWidth(CLEARANCE);
+	var clearH = scaleHeight(CLEARANCE);
+	var px = Math.max(0, scaleX(ptEl.bounds.x || 0) - clearW);
+	var py = Math.max(0, scaleY(ptEl.bounds.y || 0) - clearH);
+	var pw = Math.min(ctx.canvas.width - px, scaleWidth(ptEl.bounds.width || 1) + 2 * clearW);
+	var ph = Math.min(ctx.canvas.height - py, scaleHeight(ptEl.bounds.height || 1) + 2 * clearH);
+	if (pw <= 0 || ph <= 0) { return false; }
+	var pixels = ctx.getImageData(px, py, pw, ph).data;
+	var ALPHA_THRESHOLD = 8;
+	for (var i = 3; i < pixels.length; i += 4) {
+		if (pixels[i] > ALPHA_THRESHOLD) { return true; }
+	}
+	return false;
+}
+
+// Finds indices of literal space characters in `text` that are safe insertion points for a
+// forced {lns} break: outside any {...} code (mana symbols {T}/{G}, {i}/{/i} italics, {bar},
+// {ptshift...}, etc. -- this DSL's codes are always flat/non-nested, so a simple brace-depth
+// counter is enough) and not immediately touching an existing {line}/{lns}/{linenospace}/{bar}
+// code (inserting right next to one of those would just add a redundant/empty extra line, not
+// a useful wrap point).
+function findSafeLineBreakPoints(text) {
+	var BLOCKED = { line: true, lns: true, linenospace: true, bar: true };
+	var points = [];
+	var codes = [];
+	var depth = 0, codeStart = -1;
+	for (var i = 0; i < text.length; i++) {
+		var ch = text[i];
+		if (ch === '{') {
+			if (depth === 0) { codeStart = i; }
+			depth++;
+		} else if (ch === '}') {
+			depth = Math.max(0, depth - 1);
+			if (depth === 0 && codeStart >= 0) {
+				codes.push({ start: codeStart, end: i + 1, name: text.slice(codeStart + 1, i).toLowerCase() });
+				codeStart = -1;
+			}
+		} else if (ch === ' ' && depth === 0) {
+			points.push(i);
+		}
+	}
+	return points.filter(function (idx) {
+		var before = codes.filter(function (c) { return c.end === idx; })[0];
+		var after = codes.filter(function (c) { return c.start === idx + 1; })[0];
+		return !(before && BLOCKED[before.name]) && !(after && BLOCKED[after.name]);
+	});
+}
+
+// Builds the candidate string for "push the trailing k words onto their own final line":
+// replaces the space immediately before the k-th-from-last safe split point with {lns} (a line
+// break WITHOUT the extra inter-paragraph spacing {line} adds -- js/creator-23.js ~line 1706 --
+// the right tool for forcing a wrap mid-paragraph). k=1 breaks before the last word, k=2 before
+// the second-to-last word (pushing the last two words onto the new line), etc. Returns null if
+// there aren't k usable split points, so the caller can stop the search early.
+function insertLineBreakBeforeLastKWords(text, k) {
+	var points = findSafeLineBreakPoints(text);
+	if (points.length < k) { return null; }
+	var idx = points[points.length - k];
+	return text.slice(0, idx) + '{lns}' + text.slice(idx + 1);
+}
+
+// Import-only: keep the rules box at FULL height and force an early line break so long rules
+// text wraps clear of the PT plate, instead of shrinking the whole paragraph (real MTG cards do
+// this too -- the last line stops short of the plate rather than every line shrinking to make
+// room). Idempotent: always starts the search from the PRISTINE rules text, stored once per
+// card in rulesField._importOriginalText, so repeated calls (this runs once from inside
+// autoElementFrame/autoBloomburrowFrame and again explicitly from renderApi.js -- see
+// clampImportTextWidths's own ordering comment above) never compound their own {lns}
+// injections. Caller (clampImportTextWidths) has already confirmed ptEl.bounds exists.
+async function dodgePtPlateWithLineBreaks(rulesField, ptEl, GAP) {
+	// Cache-invalidation, and it MUST be this strict: card.text.rules may or may not be a fresh
+	// object per card (frame packs rebuild card.text, the importer only overwrites .text), so a
+	// pristine string cached on the field alone could outlive the card it came from and get
+	// written back over the NEXT card's rules -- wrong text on the card, far worse than the
+	// overlap this is fixing. So the cache is only trusted when the field still holds EXACTLY
+	// the string we last derived from it; any other value (a new card's text, a manual edit)
+	// invalidates it and becomes the new pristine.
+	if (rulesField._importOriginalText == null || rulesField._importDerivedText !== rulesField.text) {
+		rulesField._importOriginalText = rulesField.text;
+	}
+	var pristine = rulesField._importOriginalText;
+	var fullH = rulesField._importFullHeight;
+
+	// k=0: pristine text at full height. The common case for short rules text, and strictly
+	// better than the old behaviour, which shrunk EVERY creature's rules box regardless of
+	// whether it actually needed the room.
+	rulesField.text = pristine;
+	rulesField.height = fullH;
+	rulesField._importDerivedText = pristine;
+	if (!(await rulesTextCollidesWithPlate(rulesField, pristine, ptEl))) { return; }
+
+	var K = 10; // bounded search -- at most 10 more probes (11 total) per card
+	for (var k = 1; k <= K; k++) {
+		var candidate = insertLineBreakBeforeLastKWords(pristine, k);
+		if (candidate == null) { break; } // ran out of safe split points -- stop early
+		if (!(await rulesTextCollidesWithPlate(rulesField, candidate, ptEl))) {
+			// writeText()'s own 1px auto-shrink (js/creator-23.js ~line 2312) already covered
+			// "the extra line overflows the box -> shrink slightly and retry" as part of the
+			// probe that just succeeded -- commit the winning text, box stays at full height.
+			rulesField.text = candidate;
+			rulesField.height = fullH;
+			rulesField._importDerivedText = candidate;
+			return;
+		}
+	}
+
+	// Fallback: no k up to K cleared the plate -- restore the pristine text and fall back to
+	// the ORIGINAL height-clamp behaviour (the safety net; kept, not deleted).
+	rulesField.text = pristine;
+	rulesField._importDerivedText = pristine;
+	var desiredBottom = ptEl.bounds.y - GAP;
+	rulesField.height = ((rulesField.y || 0) + fullH > desiredBottom)
+		? Math.max(0.05, desiredBottom - (rulesField.y || 0))
+		: fullH;
+}
 
 // Assembles a frame whose layers are picked by element name from the pack's availableFrames.
 // Imitates autoBloomburrowFrame: snapshot text, apply the pack's text layout, restore text,
@@ -232,7 +404,7 @@ window.autoElementFrame = async function autoElementFrame(config, colors, mana_c
 
 	// Import-only: keep the top name clear of the mana cost and the type line clear of the set
 	// symbol. The big top name is the nickname on nickname frames, otherwise the title.
-	clampImportTextWidths(config.nickname ? 'nickname' : 'title');
+	await clampImportTextWidths(config.nickname ? 'nickname' : 'title');
 
 	// Preserve extension/holo frames (same pattern as autoBloomburrowFrame)
 	var preservedFrames = card.frames.filter(frame =>
@@ -329,7 +501,7 @@ window.autoBloomburrowFrame = async function autoBloomburrowFrame(colors, mana_c
 	if (typeof drawTextBuffer === 'function') { drawTextBuffer(); }
 
 	// Import-only: keep the title clear of the mana cost and the type line clear of the set symbol
-	clampImportTextWidths('title');
+	await clampImportTextWidths('title');
 };
 
 window.makeBloomburrowFrameByLetter = function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = false, hasPT = false) {

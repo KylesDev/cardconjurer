@@ -469,13 +469,18 @@
 		//     text/frame state, after frame application (step 5, so the PT-plate detection sees the
 		//     actually-applied card.frames) and before the deterministic text paint (step 7).
 		//     Harmless to also have already run from inside autoElementFrame() above -- the function
-		//     clamps from its own stored *_importFullWidth/_importFullHeight defaults rather than
-		//     from the current (possibly already-clamped) values, so a second call never compounds.
-		//     topNameKey mirrors autoElementFrame's own choice: the nickname field when the applied
-		//     frame left one on card.text (a nickname frame), else the title.
+		//     clamps/dodges from its own stored *_importFullWidth/_importFullHeight/*_importOriginalText
+		//     defaults rather than from the current (possibly already-adjusted) values, so a second
+		//     call never compounds. topNameKey mirrors autoElementFrame's own choice: the nickname
+		//     field when the applied frame left one on card.text (a nickname frame), else the title.
+		//     MUST be awaited: the PT-plate part probes candidate rules strings by actually painting
+		//     them to a scratch canvas (js/fork/deckImport.js's dodgePtPlateWithLineBreaks()) before
+		//     picking one, so an un-awaited call here would race the deterministic text paint at step 7
+		//     below -- exactly the kind of drawTextBuffer race warned about elsewhere in this file (see
+		//     the module-level comment on renderOneCard).
 		if (typeof window.clampImportTextWidths === 'function') {
 			var clampNameKey = (card.text && card.text.nickname) ? 'nickname' : 'title';
-			window.clampImportTextWidths(clampNameKey);
+			await window.clampImportTextWidths(clampNameKey);
 		}
 
 		// 6. Pre-warm every font this card's CURRENT text fields need, BEFORE the real
