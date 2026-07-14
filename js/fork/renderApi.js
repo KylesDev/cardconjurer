@@ -338,9 +338,21 @@
 		if (typeof ImageLoadTracker !== 'undefined') { ImageLoadTracker.start(); }
 		if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.start(); }
 
+		// js/fork/deckImport.js's clampImportTextWidths() (title/mana-cost, type/set-symbol,
+		// rules/PT-plate overlap fixes) only runs while it believes a headless/batch render is
+		// "driving" the card -- normally that's deckGenerationState.isGenerating, but that flag
+		// is Import Deck-only and is never set on this renderApi.js path. This flag is the
+		// render-API equivalent, read by that same guard. Set for the duration of this one
+		// card's render only; cleared in `finally` so a render that throws partway through
+		// never leaves it stuck on for a later render or for manual interactive editing
+		// afterwards (see clampImportTextWidths's own doc comment for why manual editing must
+		// stay untouched).
+		window.__ccRenderApiActive = true;
+
 		try {
 			return await renderOneCardTracked(spec, render, entryNumber);
 		} finally {
+			window.__ccRenderApiActive = false;
 			if (typeof ImageLoadTracker !== 'undefined') { ImageLoadTracker.stop(); }
 			if (typeof FontLoadTracker !== 'undefined') { FontLoadTracker.stop(); }
 		}
@@ -447,6 +459,24 @@
 		//     this (see applyArtOverrideSetting()'s own comment, mirroring
 		//     deckImport.js's generateDeck() ordering).
 		applyArtOverrideSetting(render, spec);
+
+		// 5c. Import-only text-overlap clamp (title/mana-cost, type/set-symbol, rules/PT-plate --
+		//     see js/fork/deckImport.js's clampImportTextWidths() for what/why). Step 5 above only
+		//     invokes this indirectly, via window.autoElementFrame(), when spec.frame is truthy AND
+		//     the frame is in IMPORT_FRAME_CONFIG -- so a card rendered with no frame spec at all,
+		//     or one that falls to the autoFrame()-fallback branch just above, would otherwise skip
+		//     it entirely. Call it explicitly here so it always runs exactly once with the FINAL
+		//     text/frame state, after frame application (step 5, so the PT-plate detection sees the
+		//     actually-applied card.frames) and before the deterministic text paint (step 7).
+		//     Harmless to also have already run from inside autoElementFrame() above -- the function
+		//     clamps from its own stored *_importFullWidth/_importFullHeight defaults rather than
+		//     from the current (possibly already-clamped) values, so a second call never compounds.
+		//     topNameKey mirrors autoElementFrame's own choice: the nickname field when the applied
+		//     frame left one on card.text (a nickname frame), else the title.
+		if (typeof window.clampImportTextWidths === 'function') {
+			var clampNameKey = (card.text && card.text.nickname) ? 'nickname' : 'title';
+			window.clampImportTextWidths(clampNameKey);
+		}
 
 		// 6. Pre-warm every font this card's CURRENT text fields need, BEFORE the real
 		//    paint pass below.

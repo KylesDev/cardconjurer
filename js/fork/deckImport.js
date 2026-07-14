@@ -63,14 +63,22 @@ let singleImageUpload = null; // Global variable to store single image upload
 // ============================================================================
 
 // Import-only polish: long auto-imported card names / type lines would otherwise overlap the
-// mana cost or run under the set symbol (this is stock frame behaviour — the text boxes are as
-// wide as on the "Regular" frame). Here we narrow the relevant text BOXES so writeText's
-// shrink-to-fit makes the text smaller (it is never clipped) instead of overlapping its neighbour.
-// Content-aware: space is reserved only when a mana cost / set symbol is actually present, and
-// sized to how much room they actually take. Widths are clamped from a stored default so repeated
-// imports don't compound. Applies only during Import Deck generation (manual editing is untouched).
+// mana cost or run under the set symbol, and long rules text can run under the Power/Toughness
+// plate (this is stock frame behaviour — the text boxes are as wide/tall as on the "Regular"
+// frame, which was never designed to reserve room for auto-imported content). Here we narrow/
+// shorten the relevant text BOXES so writeText's shrink-to-fit makes the text smaller (it is
+// never clipped) instead of overlapping its neighbour. Content-aware: space is reserved only
+// when a mana cost / set symbol / PT plate is actually present, and sized to how much room it
+// actually takes. Widths/height are clamped from a stored default so repeated calls don't
+// compound. Applies during Import Deck generation AND proxsmith's headless render API path
+// (window.__ccRenderApiActive, set for the duration of a card render by js/fork/renderApi.js —
+// that path never sets deckGenerationState.isGenerating, which is Import Deck-only). Manual
+// interactive editing of a single card in the Card Conjurer UI sets neither flag, so it remains
+// completely untouched.
 window.clampImportTextWidths = function clampImportTextWidths(topNameKey) {
-	if (typeof deckGenerationState === 'undefined' || !deckGenerationState.isGenerating) { return; }
+	var driving = (typeof deckGenerationState !== 'undefined' && deckGenerationState.isGenerating)
+		|| window.__ccRenderApiActive;
+	if (!driving) { return; }
 	if (!card.text) { return; }
 	var aspect = card.height / card.width; // px height / px width (~1.4); converts a height-sized square to width units
 
@@ -116,6 +124,51 @@ window.clampImportTextWidths = function clampImportTextWidths(topNameKey) {
 			typeField.width = Math.max(0.2, Math.min(fullTW, availT));
 		} else {
 			typeField.width = fullTW; // no set symbol → full width available
+		}
+	}
+
+	// Rules text vs. Power/Toughness plate. The rules box is vertically centered by default
+	// (js/creator-23.js honours noVerticalCenter), so SHORT rules text never reaches the bottom
+	// of the box and is unaffected — this only bites when the text is long enough to fill the
+	// box. Several frame packs size the rules box taller than the actual gap above the plate
+	// (e.g. packM15Nickname.js: rules bottom 0.6303+0.2875=0.9178 vs. the plate's own bounds.y
+	// of 0.8848), so long rules text runs under the plate. Detect the plate the same way
+	// js/creator-23.js (~line 1946) does for its own bottom-info {ptshift} logic — by frame
+	// element NAME, not by card type/version (a planeswalker has no PT plate frame element, so
+	// it naturally never matches here; the planeswalker/version special-cases at that line are
+	// for the unrelated {ptshift} code and don't apply to this box). Read the matched element's
+	// OWN bounds (rather than hardcoding a y) so this adapts to whichever frame pack is applied.
+	//
+	// Ordering note: this function can run BEFORE card.frames has been rebuilt for the current
+	// card (autoElementFrame calls it while card.frames still holds the PREVIOUS card's frames,
+	// then rebuilds afterwards — see that function below) as well as after, via the explicit
+	// call js/fork/renderApi.js makes once the final frame set is in place. Every call
+	// independently re-derives the clamp from the CURRENT card.frames and the stored full-height
+	// default, so a stale-frames call is always corrected by a later accurate one; a leftover
+	// shrink from a previous card's creature is never left behind on a later noncreature card.
+	var rulesField = card.text.rules;
+	if (rulesField) {
+		var ptFrameIdx = (card.frames || []).findIndex(function (el) {
+			return el.name.toLowerCase().includes('power/toughness');
+		});
+		var ptEl = ptFrameIdx >= 0 ? card.frames[ptFrameIdx] : null;
+		if (!ptEl) {
+			// No PT plate on this render -- restore full height (undoes any shrink applied
+			// while a stale/previous card's PT frame was still sitting in card.frames).
+			if (rulesField._importFullHeight != null) { rulesField.height = rulesField._importFullHeight; }
+		} else if (!ptEl.bounds) {
+			// Plate present but its frame element carries no bounds -- don't guess a position;
+			// leave the rules box exactly as it is.
+		} else {
+			if (rulesField._importFullHeight == null) { rulesField._importFullHeight = rulesField.height; }
+			var fullH = rulesField._importFullHeight;
+			var GAP = 0.004; // small clearance so the last text line doesn't kiss the plate edge
+			var desiredBottom = ptEl.bounds.y - GAP;
+			if ((rulesField.y || 0) + fullH > desiredBottom) {
+				rulesField.height = Math.max(0.05, desiredBottom - (rulesField.y || 0));
+			} else {
+				rulesField.height = fullH; // plenty of clearance -> full height available
+			}
 		}
 	}
 
