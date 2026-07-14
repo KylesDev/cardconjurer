@@ -171,6 +171,7 @@ window.clampImportTextWidths = async function clampImportTextWidths(topNameKey) 
 			if (rulesField._importOriginalText != null && rulesField._importDerivedText === rulesField.text) {
 				rulesField.text = rulesField._importOriginalText;
 				rulesField._importDerivedText = rulesField._importOriginalText;
+				rulesField.fontSize = 0;
 			}
 		} else if (!ptEl.bounds) {
 			// Plate present but its frame element carries no bounds -- don't guess a position;
@@ -224,13 +225,36 @@ function getPtDodgeScratchContext() {
 // with alpha above a small threshold, to ignore antialiasing fringe. Guarded: caller only
 // invokes this once rulesField/ptEl/ptEl.bounds are all confirmed present, but the guards stay
 // here too so this is safe to call standalone.
-async function rulesTextCollidesWithPlate(rulesField, candidateText, ptEl) {
-	if (!rulesField || !ptEl || !ptEl.bounds) { return false; }
+//
+// Returns {collides, ink}. `ink` is the number of painted pixels in the WHOLE rules box, and it
+// is what lets the search rank two candidates that both clear the plate: every candidate renders
+// the same glyphs (a {lns} adds no characters, a font-size offset adds none either), so painted
+// pixels scale with the square of the rendered font size. More ink == bigger text == better. That
+// sidesteps the fact that writeText() never reports back the size its own auto-shrink settled on.
+var ALPHA_THRESHOLD = 8; // ignore antialiasing fringe
+function countInk(ctx, x, y, w, h) {
+	if (w <= 0 || h <= 0) { return 0; }
+	var pixels = ctx.getImageData(x, y, w, h).data;
+	var n = 0;
+	for (var i = 3; i < pixels.length; i += 4) {
+		if (pixels[i] > ALPHA_THRESHOLD) { n++; }
+	}
+	return n;
+}
+async function probeRulesCandidate(rulesField, candidate, ptEl) {
+	if (!rulesField || !ptEl || !ptEl.bounds) { return { collides: false, ink: 0 }; }
 	var ctx = getPtDodgeScratchContext();
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	// Shallow clone with the candidate text swapped in -- writeText() only reads textObject
-	// fields, but clone anyway so probing can never mutate the real field.
-	var probeField = Object.assign({}, rulesField, { text: candidateText });
+	// Shallow clone with the candidate's knobs swapped in -- writeText() only reads textObject
+	// fields, but clone anyway so probing can never mutate the real field. `fontSize` is a real
+	// field writeText honours (js/creator-23.js ~line 1652: `textSize += parseInt(
+	// textObject.fontSize || '0')`), i.e. the same offset a `{fontsizeXX}` code applies, but
+	// without having to inject anything into the text string.
+	var probeField = Object.assign({}, rulesField, {
+		text: candidate.text,
+		height: candidate.height,
+		fontSize: candidate.fontSize || 0,
+	});
 	await writeText(probeField, ctx);
 	var CLEARANCE = 0.004; // same small clearance idea as the height-clamp's own GAP
 	var clearW = scaleWidth(CLEARANCE);
@@ -239,13 +263,15 @@ async function rulesTextCollidesWithPlate(rulesField, candidateText, ptEl) {
 	var py = Math.max(0, scaleY(ptEl.bounds.y || 0) - clearH);
 	var pw = Math.min(ctx.canvas.width - px, scaleWidth(ptEl.bounds.width || 1) + 2 * clearW);
 	var ph = Math.min(ctx.canvas.height - py, scaleHeight(ptEl.bounds.height || 1) + 2 * clearH);
-	if (pw <= 0 || ph <= 0) { return false; }
-	var pixels = ctx.getImageData(px, py, pw, ph).data;
-	var ALPHA_THRESHOLD = 8;
-	for (var i = 3; i < pixels.length; i += 4) {
-		if (pixels[i] > ALPHA_THRESHOLD) { return true; }
-	}
-	return false;
+	var collides = countInk(ctx, px, py, pw, ph) > 0;
+	var ink = countInk(
+		ctx,
+		Math.max(0, scaleX(rulesField.x || 0)),
+		Math.max(0, scaleY(rulesField.y || 0)),
+		scaleWidth(rulesField.width || 1),
+		scaleHeight(rulesField._importFullHeight || rulesField.height || 1)
+	);
+	return { collides: collides, ink: ink };
 }
 
 // Finds indices of literal space characters in `text` that are safe insertion points for a
@@ -314,39 +340,73 @@ async function dodgePtPlateWithLineBreaks(rulesField, ptEl, GAP) {
 		rulesField._importOriginalText = rulesField.text;
 	}
 	var pristine = rulesField._importOriginalText;
+	if (rulesField._importFullHeight == null) { rulesField._importFullHeight = rulesField.height; }
 	var fullH = rulesField._importFullHeight;
 
-	// k=0: pristine text at full height. The common case for short rules text, and strictly
-	// better than the old behaviour, which shrunk EVERY creature's rules box regardless of
-	// whether it actually needed the room.
-	rulesField.text = pristine;
-	rulesField.height = fullH;
-	rulesField._importDerivedText = pristine;
-	if (!(await rulesTextCollidesWithPlate(rulesField, pristine, ptEl))) { return; }
-
-	var K = 10; // bounded search -- at most 10 more probes (11 total) per card
-	for (var k = 1; k <= K; k++) {
-		var candidate = insertLineBreakBeforeLastKWords(pristine, k);
-		if (candidate == null) { break; } // ran out of safe split points -- stop early
-		if (!(await rulesTextCollidesWithPlate(rulesField, candidate, ptEl))) {
-			// writeText()'s own 1px auto-shrink (js/creator-23.js ~line 2312) already covered
-			// "the extra line overflows the box -> shrink slightly and retry" as part of the
-			// probe that just succeeded -- commit the winning text, box stays at full height.
-			rulesField.text = candidate;
-			rulesField.height = fullH;
-			rulesField._importDerivedText = candidate;
-			return;
-		}
+	function commit(c) {
+		rulesField.text = c.text;
+		rulesField.height = c.height;
+		rulesField.fontSize = c.fontSize || 0;
+		rulesField._importDerivedText = c.text;
 	}
 
-	// Fallback: no k up to K cleared the plate -- restore the pristine text and fall back to
-	// the ORIGINAL height-clamp behaviour (the safety net; kept, not deleted).
-	rulesField.text = pristine;
-	rulesField._importDerivedText = pristine;
+	// Candidate 0: pristine text, full box, no font offset. The common case for short rules text,
+	// and strictly better than the pre-#100 behaviour, which shrunk EVERY creature's rules box
+	// regardless of whether it actually needed the room. Nothing can beat this one on ink, so if
+	// it clears the plate we are done without a search.
+	var base = { text: pristine, height: fullH, fontSize: 0, how: 'as-is' };
+	var probe = await probeRulesCandidate(rulesField, base, ptEl);
+	if (!probe.collides) { commit(base); return; }
+
+	// Otherwise search TWO independent knobs and keep whichever survivor renders the LARGEST text
+	// (most ink), rather than assuming one knob always wins:
+	//
+	//  (a) {lns} line breaks -- push the trailing k words onto their own short final line. Costs
+	//      one extra line, which can push the paragraph past the box height and make writeText's
+	//      own auto-shrink (js/creator-23.js ~line 2312) drop the font a step or two.
+	//  (b) a font-size offset -- writeText's `textObject.fontSize` (~line 1652) is an OFFSET on
+	//      the starting size, exactly what a `{fontsizeXX}` code applies. Because the auto-shrink
+	//      loop decrements the STARTING size until the text fits, a small negative offset on text
+	//      that already overflows is largely cancelled out by the loop (which is why a small
+	//      offset appears to do nothing, and why the offset has to grow as the text gets longer
+	//      before it bites). Once it does bite, the whole paragraph shrinks and rises out of the
+	//      plate's band with the last line still full width -- sometimes tighter than (a).
+	//
+	// Which one wins depends on the card, so probe both and let the ink decide.
+	var best = null;
+	function consider(c, p) {
+		if (p.collides) { return; }
+		if (!best || p.ink > best.ink) { best = { candidate: c, ink: p.ink }; }
+	}
+
+	var K = 10;
+	for (var k = 1; k <= K; k++) {
+		var broken = insertLineBreakBeforeLastKWords(pristine, k);
+		if (broken == null) { break; } // ran out of safe split points -- stop early
+		var cBreak = { text: broken, height: fullH, fontSize: 0, how: 'lns:' + k };
+		consider(cBreak, await probeRulesCandidate(rulesField, cBreak, ptEl));
+	}
+
+	var MAX_SHRINK = 12; // px of font offset; well past the point where it starts to bite
+	for (var s = 1; s <= MAX_SHRINK; s++) {
+		var cSize = { text: pristine, height: fullH, fontSize: -s, how: 'fontsize:-' + s };
+		var pSize = await probeRulesCandidate(rulesField, cSize, ptEl);
+		consider(cSize, pSize);
+		if (!pSize.collides) { break; } // deeper offsets only shrink further -- never better
+	}
+
+	if (best) { commit(best.candidate); return; }
+
+	// Fallback: nothing cleared the plate -- restore the pristine text and fall back to the
+	// original height-clamp behaviour (the safety net; kept, not deleted).
 	var desiredBottom = ptEl.bounds.y - GAP;
-	rulesField.height = ((rulesField.y || 0) + fullH > desiredBottom)
-		? Math.max(0.05, desiredBottom - (rulesField.y || 0))
-		: fullH;
+	commit({
+		text: pristine,
+		fontSize: 0,
+		height: ((rulesField.y || 0) + fullH > desiredBottom)
+			? Math.max(0.05, desiredBottom - (rulesField.y || 0))
+			: fullH,
+	});
 }
 
 // Assembles a frame whose layers are picked by element name from the pack's availableFrames.
