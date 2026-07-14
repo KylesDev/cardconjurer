@@ -1640,12 +1640,15 @@ async function autoFrameUnified(frameType, colors, mana_cost, type_line, power) 
  * Main auto frame function triggered by UI
  * Detects card colors and builds appropriate frame
  */
-function autoFrame() {
-	var frame = document.querySelector('#autoFrame').value;
-	if (frame == 'false') { autoFramePack = null; return; }
-
+// FORK: extracted from autoFrame()'s own top (was inlined there, duplicated
+// by nothing else) so js/fork/renderApi.js can compute the same colors
+// without going through autoFrame()'s own IMPORT_FRAME_CONFIG dispatch
+// (see that dispatch branch below -- it's fire-and-forget, no promise a
+// driver can await; renderApi.js calls window.autoElementFrame() directly
+// instead of autoFrame(), and needs this same color detection first).
+window.detectAutoFrameColors = function detectAutoFrameColors(card) {
 	var colors = [];
-	
+
 	// ----------------------------------------------------------------
 	// LAND COLOR DETECTION
 	// ----------------------------------------------------------------
@@ -1726,10 +1729,19 @@ function autoFrame() {
 		colors = [...new Set(card.text.mana.text.toUpperCase().split('').filter(char => ['W', 'U', 'B', 'R', 'G'].includes(char)))];
 	}
 
+	return colors;
+};
+
+function autoFrame() {
+	var frame = document.querySelector('#autoFrame').value;
+	if (frame == 'false') { autoFramePack = null; return; }
+
+	var colors = window.detectAutoFrameColors(card);
+
 	// ----------------------------------------------------------------
 	// FRAME BUILDING & PACK LOADING
 	// ----------------------------------------------------------------
-	
+
 	// Get frame config and build the frame
 	const config = getFrameTypeConfig(frame);
 	if (config) {
@@ -1755,17 +1767,25 @@ function autoFrame() {
 		}
 	} else if (window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[frame]) {
 		// FORK: import-deck frame dispatch — IMPORT_FRAME_CONFIG and autoElementFrame defined in js/fork/deckImport.js
-		if (window.autoElementFrame) {
-			window.autoElementFrame(
-				window.IMPORT_FRAME_CONFIG[frame], colors,
-				card.text.mana.text, card.text.type.text, card.text.pt.text,
-				window.deckImportNickname || ''
-			);
-		}
-		if (autoFramePack != frame) {
-			loadScript('/js/frames/pack' + frame + '.js');
-			autoFramePack = frame;
-		}
+		// Unlike the native frames above, autoElementFrame() reads `availableFrames` and
+		// `#loadFrameVersion.onclick`, both only populated once THIS frame's pack script has
+		// actually run. Loading the pack must happen (and finish) BEFORE autoElementFrame() runs,
+		// not after/concurrently, or it reads whatever pack was previously loaded — which showed up
+		// as e.g. selecting "Nickname Frames (Extra Short)" rendering the non-short frame graphic
+		// and vice versa.
+		var packReady = (autoFramePack != frame)
+			? loadScript('/js/frames/pack' + frame + '.js')
+			: Promise.resolve();
+		autoFramePack = frame;
+		packReady.then(function() {
+			if (window.autoElementFrame) {
+				window.autoElementFrame(
+					window.IMPORT_FRAME_CONFIG[frame], colors,
+					card.text.mana.text, card.text.type.text, card.text.pt.text,
+					window.deckImportNickname || ''
+				);
+			}
+		});
 	}
 }
 
