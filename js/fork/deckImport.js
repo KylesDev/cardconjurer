@@ -567,6 +567,18 @@ window.autoBloomburrowFrame = async function autoBloomburrowFrame(colors, mana_c
 window.makeBloomburrowFrameByLetter = function makeBloomburrowFrameByLetter(letter, mask = false, maskToRightHalf = false, hasPT = false) {
 	letter = letter.toUpperCase();
 
+	// Land letters (proxsmith #102). cardFrameProperties() (js/creator-23.js ~line 735) returns a
+	// LAND-suffixed letter for anything with 'Land' in its type line: 'L' when it has no detected
+	// colors, 'ML' for 3+, and '<C>L' ('UL', 'GL', ...) for one or two -- and for lands the colors
+	// are detected from the rules text's "Add {U}" abilities (detectAutoFrameColors(), autoFrame.js
+	// ~line 1656), so a plain Island really does arrive here as 'UL'. This pack only ships the
+	// single-letter graphics (w/u/b/r/g/m/a/c/v), so a suffixed letter used to build a src like
+	// 'noncreatureUL.png' -- a 404, whose broken <img> made drawImage() throw and failed the whole
+	// card. Every land uses the same base graphic as its color, so strip the suffix; a colorless/
+	// 3+-color land falls back to Colorless as before.
+	if (letter.length > 1 && letter.endsWith('L')) {
+		letter = letter.slice(0, -1);
+	}
 	if (letter == 'L') {
 		letter = 'C';
 	}
