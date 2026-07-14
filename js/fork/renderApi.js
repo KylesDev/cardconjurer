@@ -27,7 +27,8 @@
  * Deck-wide + per-card render settings (proxsmith issue #11): the manifest
  * handed to proxsmithRenderDeck() may carry a top-level "render" object
  * (flavor_text, set_symbol_mode/set_code, collector.*, art_offset_x/y,
- * art_zoom -- see proxsmith/adapters/render_cardconjurer.py's build_manifest())
+ * art_zoom, title_from_nickname (issue #101) -- see
+ * proxsmith/adapters/render_cardconjurer.py's build_manifest())
  * plus, per card, resolved override fields (art_offset_x/y, art_zoom, artist,
  * rarity, collector_* -- proxsmith/core/model.py's Deck resolvers). This file
  * does not reimplement any of that logic -- it only sets the same DOM fields
@@ -297,6 +298,26 @@
 		if (typeof applyDeckArtOverride === 'function') { applyDeckArtOverride(); }
 	}
 
+	// Step: render the nickname as the card's title (issue #101). Deck-wide flag,
+	// no per-card override (mirrors render.flavor_text, not the collector.* fields).
+	// Only touches card.text.title.text -- NOT spec.name, which already did its job
+	// feeding importCardForDeck()'s Scryfall lookup back in step 1; overwriting it
+	// there instead would just make this a rename of applyFlavorTextSetting's ordering
+	// problem (the lookup happens once, up front). Must run AFTER frame application
+	// (step 5) -- frame packs rebuild card.text from scratch -- and BEFORE step 5c's
+	// clampImportTextWidths() call, which measures the title against the mana cost and
+	// so has to see the FINAL title string. card.text.title can be absent on some
+	// frames (e.g. art-only/textless); absent is a no-op, never a throw. Deliberately
+	// literal: on a NICKNAME-style frame (M15Nickname, IkoNicknameShort, ...) the
+	// nickname already got its own dedicated text field back in step 5
+	// (window.autoElementFrame's last argument) -- with this flag on, such a frame
+	// shows the nickname in BOTH places. That's the spec, not a bug.
+	function applyTitleFromNicknameSetting(render, spec) {
+		if (!render || !render.title_from_nickname) { return; }
+		if (!spec || typeof spec.nickname !== 'string' || !spec.nickname.trim()) { return; }
+		if (card.text && card.text.title) { card.text.title.text = spec.nickname; }
+	}
+
 	// Build the .cardconjurer export object. Mirrors bulkDownloadZip() in creator-23.js:
 	// deep-clone the live card and strip the in-memory decoded images (they're huge and
 	// not part of the saved format — src paths are kept). Returns a plain object; the
@@ -459,6 +480,14 @@
 		//     this (see applyArtOverrideSetting()'s own comment, mirroring
 		//     deckImport.js's generateDeck() ordering).
 		applyArtOverrideSetting(render, spec);
+
+		// 5b2. Nickname-as-title override (issue #101). Must run after frame
+		//      application (5) rebuilds card.text, and before 5c's clamp below,
+		//      which measures the title against the mana cost and so needs to
+		//      see this FINAL title string. See applyTitleFromNicknameSetting()'s
+		//      own comment for the full ordering rationale and the deliberate
+		//      double-display caveat on nickname-style frames.
+		applyTitleFromNicknameSetting(render, spec);
 
 		// 5c. Import-only text-overlap clamp (title/mana-cost, type/set-symbol, rules/PT-plate --
 		//     see js/fork/deckImport.js's clampImportTextWidths() for what/why). Step 5 above only
