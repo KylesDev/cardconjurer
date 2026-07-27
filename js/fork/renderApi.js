@@ -104,18 +104,55 @@
 		defaultCardBootstrapped = true;
 	}
 
+	// Which pack script backs a given frame key. Mirrors autoFrame()'s own
+	// mapping (js/autoFrame.js): BorderlessUB reuses the Borderless pack, every
+	// other frame's pack is named after the frame itself.
+	function framePackName(frameKey) {
+		return frameKey === 'BorderlessUB' ? 'Borderless' : frameKey;
+	}
+
+	// Load a frame's pack script and wait for it to settle. Covers BOTH frame
+	// families: the IMPORT_FRAME_CONFIG ones (whose autoElementFrame() path needs
+	// `availableFrames`/`#loadFrameVersion.onclick` populated before it runs) and
+	// the native AutoFrame ones (getFrameTypeConfig).
+	//
+	// Why native frames must ALSO be preloaded here (issue #133 — keep this):
+	// every pack script ends in loadFramePack() (js/creator-23.js), which
+	// auto-clicks `#loadFrameVersion` because the '#autoLoadFrameVersion'
+	// checkbox ships `checked` and creator-23.js's tail init seeds
+	// localStorage['autoLoadFrameVersion'] = 'true' from it. That click runs the
+	// pack's own version load: `card.artBounds = {...}; autoFitArt();` (see e.g.
+	// js/frames/packBorderless.js) — i.e. it RE-FITS (re-centers) the art. Left to
+	// autoFrame()'s own fire-and-forget loadScript() in the fallback branch below,
+	// that click lands whenever the pack happens to arrive, which on a real
+	// deployed instance (cold session, contended CPU) is routinely LATER than the
+	// fixed `sleep(AUTOFRAME_TIMEOUT_MS)` that branch used to wait — so it wiped
+	// the art offset/zoom that step 5b had already applied (reproduced: with the
+	// pack fetch delayed 2.5s, a Borderless card with art_offset_y=-25 rendered
+	// pixel-identical to one with no offset at all, while a second Borderless card
+	// in the same session — pack already loaded — honoured it). Loading the pack
+	// here, awaited, moves that auto-fit BEFORE the offset is applied.
 	async function ensureFramePackLoaded(frameKey) {
 		if (!frameKey) { return; }
-		// Only IMPORT_FRAME_CONFIG frames have a pack that needs preloading here —
-		// mirror exactly what generateDeck()/generateSingleCard() preload.
-		if (!window.IMPORT_FRAME_CONFIG || !window.IMPORT_FRAME_CONFIG[frameKey]) { return; }
-		if (loadedFramePacks.has(frameKey)) { return; }
+		var isImportFrame = !!(window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[frameKey]);
+		var isNativeFrame = typeof window.getFrameTypeConfig === 'function'
+			&& !!window.getFrameTypeConfig(frameKey);
+		var isBloomburrow = frameKey === 'BloomburrowBorderlessColored';
+		if (!isImportFrame && !isNativeFrame && !isBloomburrow) { return; }
+		var packName = framePackName(frameKey);
+		if (loadedFramePacks.has(packName)) { return; }
 		// loadScript() resolves on the script's onload; still do the proven 800ms settle
 		// afterwards, exactly like the existing code (onload doesn't guarantee the pack's
 		// internal registration — e.g. availableFrames — has fully settled).
-		await loadScript('/js/frames/pack' + frameKey + '.js');
+		await loadScript('/js/frames/pack' + packName + '.js');
 		await sleep(800);
-		loadedFramePacks.add(frameKey);
+		loadedFramePacks.add(packName);
+		// Keep autoFrame()'s own "is this pack already loaded?" bookkeeping in sync so
+		// neither it nor a later card re-fetches the pack we just loaded (a second load
+		// would re-run loadFramePack() -> the same late auto-click this exists to avoid).
+		// `autoFramePack` is a plain `var` global (js/creator-23.js), initially undefined
+		// -- assign through window unconditionally rather than typeof-guarding it.
+		window.autoFramePack = packName;
 	}
 
 	// Wait until the just-uploaded art has actually finished the autoFit -> artEdited
@@ -441,9 +478,20 @@
 		//    bounds either, so art fills the whole canvas unclipped instead of sitting in
 		//    its normal window). EVERY frame proxsmith itself ever renders with
 		//    (M15Nickname, IkoNicknameShort, PromoRegular-1, IkoShort) is in
-		//    IMPORT_FRAME_CONFIG, so this covers the real path completely; a frame NOT in
-		//    that config (hypothetical, not used by proxsmith today) falls back to the
-		//    original autoFrame()+fixed-sleep behavior below.
+		//    IMPORT_FRAME_CONFIG, so this covers the real path completely.
+		//
+		//    A frame NOT in that config (every native AutoFrame frame -- Borderless,
+		//    JapanShowcase, ...) is handled by the second branch below, which applies the
+		//    SAME determinism to autoFrame()'s native path: await the already-async
+		//    autoFrameUnified() directly instead of calling autoFrame() and hoping a fixed
+		//    sleep covers its fire-and-forget internals. Issue #133: with the old
+		//    autoFrame()+sleep(AUTOFRAME_TIMEOUT_MS) fallback, the frame pack's own late
+		//    auto-click of `#loadFrameVersion` re-fitted (re-centered) the art AFTER step
+		//    5b had applied art_offset_x/y/art_zoom, silently discarding the offset --
+		//    see ensureFramePackLoaded()'s comment for the full chain. Only a frame that
+		//    is in NEITHER registry (e.g. BloomburrowBorderlessColored, which autoFrame()
+		//    dispatches through its own special case) still uses the original
+		//    autoFrame()+fixed-sleep path.
 		//
 		//    This also fixes a second, independent bug: the OLD code set the global
 		//    `window.deckImportNickname` then immediately cleared it back to '' on the
@@ -464,10 +512,40 @@
 					card.text.mana.text, card.text.type.text, card.text.pt.text,
 					spec.nickname || ''
 				);
-			} else {
-				window.deckImportNickname = spec.nickname || '';
+			} else if (typeof window.getFrameTypeConfig === 'function'
+					&& window.getFrameTypeConfig(spec.frame)
+					&& typeof window.autoFrameUnified === 'function') {
+				// Native AutoFrame frame (js/autoFrame.js's getFrameTypeConfig registry).
+				// The pack -- and therefore its `#loadFrameVersion` version load, which sets
+				// card.artBounds and re-fits the art -- is already fully loaded and settled by
+				// ensureFramePackLoaded() above, so nothing frame-related can re-center the art
+				// after step 5b applies the offset (issue #133).
 				var autoFrameEl = document.querySelector('#autoFrame');
 				if (autoFrameEl) { autoFrameEl.value = spec.frame; }
+				var nativeColors = typeof window.detectAutoFrameColors === 'function'
+					? window.detectAutoFrameColors(card)
+					: [];
+				await window.autoFrameUnified(
+					spec.frame, nativeColors,
+					card.text.mana.text, card.text.type.text, card.text.pt.text
+				);
+			} else if (spec.frame === 'BloomburrowBorderlessColored'
+					&& typeof window.autoBloomburrowFrame === 'function') {
+				// autoFrame()'s third dispatch case (js/autoFrame.js): its own special-cased
+				// frame, assembled by a fork-only builder that is already async -- await it
+				// directly for the same reason as the two branches above (issue #133).
+				var bloomFrameEl = document.querySelector('#autoFrame');
+				if (bloomFrameEl) { bloomFrameEl.value = spec.frame; }
+				var bloomColors = typeof window.detectAutoFrameColors === 'function'
+					? window.detectAutoFrameColors(card)
+					: [];
+				await window.autoBloomburrowFrame(
+					bloomColors, card.text.mana.text, card.text.type.text, card.text.pt.text
+				);
+			} else {
+				window.deckImportNickname = spec.nickname || '';
+				var fallbackFrameEl = document.querySelector('#autoFrame');
+				if (fallbackFrameEl) { fallbackFrameEl.value = spec.frame; }
 				autoFrame();
 				window.deckImportNickname = '';
 				await sleep(AUTOFRAME_TIMEOUT_MS);
