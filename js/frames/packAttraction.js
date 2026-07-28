@@ -3,6 +3,7 @@ var masks = [{src:'/img/frames/attraction/maskPinline.png', name:'Pinline'}, {sr
 //defines available frames
 availableFrames = [
 	{name:'Attraction Frame', src:'/img/frames/attraction/attraction.png', masks:masks},
+	{name:'Attraction Frame (Transparent)', src:'/img/frames/attraction/attractionTransparent.png', masks:masks},
 	{name:'Light 2', src:'/img/frames/attraction/2.png', bounds:{x:1362/1500, y:1443/2100, width:65/1500, height:65/2100}},
 	{name:'Light 3', src:'/img/frames/attraction/3.png', bounds:{x:1362/1500, y:1543/2100, width:65/1500, height:65/2100}},
 	{name:'Light 4', src:'/img/frames/attraction/4.png', bounds:{x:1362/1500, y:1643/2100, width:65/1500, height:65/2100}},
