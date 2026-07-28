@@ -32,6 +32,7 @@ const frameNames = new Map ([
 	['Prototype (Brothers\' War)', 'Prototype'],
 	['Prototype (Extended Art) (Brothers\' War)', 'PrototypeExtended'],
 	['Attractions (Unfinity)', 'Attraction'],
+	['Attractions Transparent (Unfinity)', 'AttractionTransparent'],
 	['Class (D&D)', 'Class'],
 	['Class (Universes Beyond)', 'ClassUB'],
 	['Snow (Kaldheim)', 'M15Snow'],
