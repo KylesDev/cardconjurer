@@ -1,0 +1,78 @@
+[
+  {
+    "name": "Jace, the Mind Sculptor",
+    "type_line": "Legendary Planeswalker — Jace",
+    "mana_cost": "{2}{U}{U}",
+    "oracle_text": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library.\n0: Draw three cards, then put two cards from your hand on top of your library in any order.\n−1: Return target creature to its owner's hand.\n−12: Exile all cards from target player's library, then that player shuffles their hand into their library.",
+    "loyalty": "3",
+    "colors": [
+      "U"
+    ],
+    "layout": "normal",
+    "rarity": "mythic",
+    "set": "2xm",
+    "lang": "en",
+    "collector_number": "56"
+  },
+  {
+    "name": "Nicol Bolas, Dragon-God",
+    "type_line": "Legendary Planeswalker — Bolas",
+    "mana_cost": "{U}{B}{B}{B}{R}",
+    "oracle_text": "Nicol Bolas has all loyalty abilities of all other planeswalkers on the battlefield.\n+1: You draw a card. Each opponent exiles a card from their hand or a permanent they control.\n−3: Destroy target creature or planeswalker.\n−8: Each opponent who doesn't control a legendary creature or planeswalker loses the game.",
+    "loyalty": "4",
+    "colors": [
+      "B",
+      "R",
+      "U"
+    ],
+    "layout": "normal",
+    "rarity": "mythic",
+    "set": "rvr",
+    "lang": "en",
+    "collector_number": "205"
+  },
+  {
+    "name": "Karn Liberated",
+    "type_line": "Legendary Planeswalker — Karn",
+    "mana_cost": "{7}",
+    "oracle_text": "+4: Target player exiles a card from their hand.\n−3: Exile target permanent.\n−14: Restart the game, leaving in exile all non-Aura permanent cards exiled with Karn. Then put those cards onto the battlefield under your control.",
+    "loyalty": "6",
+    "colors": [],
+    "layout": "normal",
+    "rarity": "mythic",
+    "set": "2xm",
+    "lang": "en",
+    "collector_number": "1"
+  },
+  {
+    "name": "Liliana of the Veil",
+    "type_line": "Legendary Planeswalker — Liliana",
+    "mana_cost": "{1}{B}{B}",
+    "oracle_text": "+1: Each player discards a card.\n−2: Target player sacrifices a creature.\n−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+    "loyalty": "3",
+    "colors": [
+      "B"
+    ],
+    "layout": "normal",
+    "rarity": "mythic",
+    "set": "inr",
+    "lang": "en",
+    "collector_number": "475"
+  },
+  {
+    "name": "Grizzly Bears",
+    "type_line": "Creature — Bear",
+    "mana_cost": "{1}{G}",
+    "oracle_text": "",
+    "colors": [
+      "G"
+    ],
+    "power": "2",
+    "toughness": "2",
+    "layout": "normal",
+    "rarity": "common",
+    "set": "10e",
+    "lang": "en",
+    "collector_number": "268"
+  }
+]
