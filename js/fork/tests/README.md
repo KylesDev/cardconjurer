@@ -27,3 +27,27 @@ CC_RENDER_API_SOURCE=/percorso/renderApi-precedente.js node --test js/fork/tests
 Il confronto visuale di Ajani e il report Chromium sono allegati al task/PR.
 L'e2e remoto tramite proxsmith resta una verifica separata: questo repository
 non contiene il driver Python e non modifica servizi di produzione.
+
+## Confronto Chromium locale
+
+FATTO VERIFICATO: importazione reale con risposta Scryfall di Ajani Steadfast
+intercettata e artwork locale; asset, font e canvas reali. Sequenza nella stessa
+pagina: M15Nickname → JapanShowcase → Borderless → JapanShowcase.
+
+| Campo dell'ultima carta | Prima | Dopo |
+| --- | --- | --- |
+| `version` | `borderless` | `japanShowcase` |
+| `artBounds.height` | `0.9224` | `0.9224` |
+| `text.title.color` | `white` | `white` |
+| `text.rules.font` | assente (font predefinito) | `Plantin-MT-Pro-Rg` |
+
+In questa sequenza Borderless condivide bounds e colore con Japan, ma lascia
+posizioni e font errati. Il testo di Ajani dopo il fix ha outline e occupa il
+box Japan sotto il separatore; prima attraversa il separatore.
+
+[PNG prima](evidence/ajani-before.png) · [PNG dopo](evidence/ajani-after.png).
+
+Limiti del harness: fragment creator caricato direttamente (errore preesistente
+`bindInputs is not defined`, superato dal bootstrap renderApi); charset del
+fragment altera le virgolette nei PNG prima/dopo. Non è una verifica del server
+remoto. Le anteprime sono screenshot a 500 px del PNG restituito dalla API.
