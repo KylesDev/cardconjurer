@@ -61,20 +61,9 @@
 		return new Promise(function (resolve) { setTimeout(resolve, ms); });
 	}
 
-	// Frame packs (pack<Name>.js) already preloaded this page session. Module-scoped
-	// so it PERSISTS across proxsmithRenderCard/proxsmithRenderDeck calls: once a pack
-	// is loaded it stays loaded.
-	//
-	// Why this exists (non-obvious — keep it): autoFrame()'s fork dispatch (see
-	// js/autoFrame.js §IMPORT_FRAME_CONFIG) calls autoElementFrame() in the SAME tick
-	// as it kicks off loadScript() for the frame's pack, so the FIRST use of a given
-	// frame in a session can race the pack not being ready yet. generateDeck()/
-	// generateSingleCard() sidestep this by preloading the pack + a fixed 800ms settle
-	// BEFORE their loop — but they only ever use ONE frame for the whole batch.
-	// proxsmithRenderDeck can mix frames per card, so we must preload per DISTINCT
-	// frame (only for frames in IMPORT_FRAME_CONFIG — exactly what the existing code
-	// preloads; plain upstream frames and BloomburrowBorderlessColored are excluded).
-	var loadedFramePacks = new Set();
+	// Registrazioni dei pack già caricati: handler di versione e catalogo sono
+	// globali nel core, quindi vanno ripristinati anche quando il pack è in cache.
+	var loadedFramePacks = new Map();
 
 	// Bootstrap for a totally fresh headless session (no prior localStorage / UI clicks).
 	//
@@ -111,27 +100,8 @@
 		return frameKey === 'BorderlessUB' ? 'Borderless' : frameKey;
 	}
 
-	// Load a frame's pack script and wait for it to settle. Covers BOTH frame
-	// families: the IMPORT_FRAME_CONFIG ones (whose autoElementFrame() path needs
-	// `availableFrames`/`#loadFrameVersion.onclick` populated before it runs) and
-	// the native AutoFrame ones (getFrameTypeConfig).
-	//
-	// Why native frames must ALSO be preloaded here (issue #133 — keep this):
-	// every pack script ends in loadFramePack() (js/creator-23.js), which
-	// auto-clicks `#loadFrameVersion` because the '#autoLoadFrameVersion'
-	// checkbox ships `checked` and creator-23.js's tail init seeds
-	// localStorage['autoLoadFrameVersion'] = 'true' from it. That click runs the
-	// pack's own version load: `card.artBounds = {...}; autoFitArt();` (see e.g.
-	// js/frames/packBorderless.js) — i.e. it RE-FITS (re-centers) the art. Left to
-	// autoFrame()'s own fire-and-forget loadScript() in the fallback branch below,
-	// that click lands whenever the pack happens to arrive, which on a real
-	// deployed instance (cold session, contended CPU) is routinely LATER than the
-	// fixed `sleep(AUTOFRAME_TIMEOUT_MS)` that branch used to wait — so it wiped
-	// the art offset/zoom that step 5b had already applied (reproduced: with the
-	// pack fetch delayed 2.5s, a Borderless card with art_offset_y=-25 rendered
-	// pixel-identical to one with no offset at all, while a second Borderless card
-	// in the same session — pack already loaded — honoured it). Loading the pack
-	// here, awaited, moves that auto-fit BEFORE the offset is applied.
+	// Carica e riattiva il pack della carta corrente. Il layout IMPORT viene
+	// atteso da autoElementFrame(); gli altri builder richiedono un load esplicito.
 	async function ensureFramePackLoaded(frameKey) {
 		if (!frameKey) { return; }
 		var isImportFrame = !!(window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[frameKey]);
@@ -140,19 +110,38 @@
 		var isBloomburrow = frameKey === 'BloomburrowBorderlessColored';
 		if (!isImportFrame && !isNativeFrame && !isBloomburrow) { return; }
 		var packName = framePackName(frameKey);
-		if (loadedFramePacks.has(packName)) { return; }
-		// loadScript() resolves on the script's onload; still do the proven 800ms settle
-		// afterwards, exactly like the existing code (onload doesn't guarantee the pack's
-		// internal registration — e.g. availableFrames — has fully settled).
-		await loadScript('/js/frames/pack' + packName + '.js');
-		await sleep(800);
-		loadedFramePacks.add(packName);
-		// Keep autoFrame()'s own "is this pack already loaded?" bookkeeping in sync so
-		// neither it nor a later card re-fetches the pack we just loaded (a second load
-		// would re-run loadFramePack() -> the same late auto-click this exists to avoid).
-		// `autoFramePack` is a plain `var` global (js/creator-23.js), initially undefined
-		// -- assign through window unconditionally rather than typeof-guarding it.
+		var registration = loadedFramePacks.get(packName);
+		var loadBtn = document.querySelector('#loadFrameVersion');
+		if (!registration) {
+			// Il click automatico di loadFramePack() non restituisce la promise del
+			// layout (che può attendere un font). Evitarlo elimina caricamenti tardivi
+			// che sovrascrivono gli offset (#133); il layout viene atteso sotto.
+			var autoLoad = localStorage.getItem('autoLoadFrameVersion');
+			try {
+				localStorage.setItem('autoLoadFrameVersion', 'false');
+				await loadScript('/js/frames/pack' + packName + '.js');
+				await sleep(800);
+				registration = {
+					frames: availableFrames,
+					loadVersion: loadBtn.onclick,
+					disabled: loadBtn.disabled
+				};
+				loadedFramePacks.set(packName, registration);
+			} finally {
+				if (autoLoad === null) {
+					localStorage.removeItem('autoLoadFrameVersion');
+				} else {
+					localStorage.setItem('autoLoadFrameVersion', autoLoad);
+				}
+			}
+		}
+		availableFrames = registration.frames;
+		loadBtn.onclick = registration.loadVersion;
+		loadBtn.disabled = registration.disabled;
 		window.autoFramePack = packName;
+		if (!isImportFrame && typeof loadBtn.onclick === 'function') {
+			await loadBtn.onclick();
+		}
 	}
 
 	// Wait until the just-uploaded art has actually finished the autoFit -> artEdited
@@ -516,10 +505,8 @@
 					&& window.getFrameTypeConfig(spec.frame)
 					&& typeof window.autoFrameUnified === 'function') {
 				// Native AutoFrame frame (js/autoFrame.js's getFrameTypeConfig registry).
-				// The pack -- and therefore its `#loadFrameVersion` version load, which sets
-				// card.artBounds and re-fits the art -- is already fully loaded and settled by
-				// ensureFramePackLoaded() above, so nothing frame-related can re-center the art
-				// after step 5b applies the offset (issue #133).
+				// Il layout del pack è già stato riapplicato e atteso per questa carta,
+				// anche a cache calda, prima degli offset dello step 5b (#133).
 				var autoFrameEl = document.querySelector('#autoFrame');
 				if (autoFrameEl) { autoFrameEl.value = spec.frame; }
 				var nativeColors = typeof window.detectAutoFrameColors === 'function'
