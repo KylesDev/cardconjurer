@@ -24,12 +24,25 @@ anche il fallback Regular/Borderless alle carte non PW. Nell'UI, senza gli
 ultimi due argomenti, ricava il testo dalle caselle e la fedeltà dall'import
 Scryfall corrente o dalla casella fedeltà. DFC/MDFC e Compleated sono fuori scope.
 
+Nel tab Planeswalker, **Nascondi backdrop abilità** rimuove righe e transizioni,
+conservando testo e simboli fedeltà. Lo stato `card.planeswalker.hideBackdrop`
+resta nei salvataggi e nei cambi di pack; il campo assente equivale a `false`.
+La funzione `window.setPlaneswalkerHideBackdrop(true)` permette lo stesso
+controllo senza UI, dopo il caricamento di un frame PW.
+
+Il renderer accetta `planeswalkerHideBackdrop` nella singola spec oppure in
+`spec.render` / `manifest.render`. La spec prevale sul valore del deck; senza
+opzione il render ripristina `false`, anche dopo una carta con backdrop nascosto.
+Esempio: `proxsmithRenderCard({name: 'Liliana of the Veil', frame: 'Planeswalker',
+render: {planeswalkerHideBackdrop: true}})`.
+
 Verifiche locali:
 
 ```sh
 node --test js/fork/tests/planeswalkerFrame.test.cjs
 # Con Playwright installato e Chromium disponibile:
 node --test js/fork/tests/planeswalkerFrame.browser.cjs
+node --test js/fork/tests/planeswalkerBackdrop.browser.cjs
 ```
 
 Il test browser serve i file del worktree tramite intercettazione delle richieste,

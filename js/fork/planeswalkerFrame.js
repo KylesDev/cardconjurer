@@ -2,6 +2,39 @@
 (function () {
     // Quota minima di altezza per riga abilità, come frazione della quota uniforme total/n.
     const PW_MIN_ROW_SHARE = 0.6;
+    // La versione upstream ridefinisce planeswalkerEdited e conserva callback
+    // immagini: interveniamo sul drawCard stabile, prima della composizione.
+    const originalDrawCard = window.drawCard;
+    window.drawCard = function (...args) {
+        const invert = document.querySelector('#planeswalker-invert');
+        let checkbox = document.querySelector('#planeswalker-hide-backdrop');
+        if (invert && !checkbox) {
+            const label = document.createElement('label');
+            label.className = 'padding margin-bottom input-description';
+            checkbox = document.createElement('input');
+            checkbox.id = 'planeswalker-hide-backdrop';
+            checkbox.type = 'checkbox';
+            checkbox.className = 'input margin-bottom';
+            checkbox.onchange = () => window.setPlaneswalkerHideBackdrop(checkbox.checked);
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(' Nascondi backdrop abilità'));
+            invert.insertAdjacentElement('afterend', label);
+        }
+        if (checkbox) checkbox.checked = card.planeswalker?.hideBackdrop === true;
+        if (card.version.includes('planeswalker') && card.planeswalker?.hideBackdrop === true &&
+                typeof planeswalkerPreFrameContext !== 'undefined') {
+            planeswalkerPreFrameContext.clearRect(0, 0, planeswalkerPreFrameCanvas.width, planeswalkerPreFrameCanvas.height);
+        }
+        return originalDrawCard.apply(this, args);
+    };
+
+    // API UI/proxsmith: il campo viene serializzato dal salvataggio nativo.
+    // Campo assente nelle carte precedenti equivale a false.
+    window.setPlaneswalkerHideBackdrop = function (hidden) {
+        if (!card.planeswalker || !card.version.includes('planeswalker')) return;
+        card.planeswalker.hideBackdrop = hidden === true;
+        planeswalkerEdited();
+    };
     const select = document.querySelector('#autoFrame');
     ['Planeswalker', 'PlaneswalkerBorderless'].forEach(function (value) {
         if (!select || Array.from(select.options).some(option => option.value === value)) return;

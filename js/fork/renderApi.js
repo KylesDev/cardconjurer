@@ -552,6 +552,15 @@
 			}
 		}
 
+		// Opzione PW: spec.planeswalkerHideBackdrop prevale su
+		// spec.render/manifest.render.planeswalkerHideBackdrop; default false
+		// per evitare che una carta erediti il flag dal render precedente.
+		if (typeof window.setPlaneswalkerHideBackdrop === 'function') {
+			var hideBackdrop = typeof spec.planeswalkerHideBackdrop === 'boolean'
+				? spec.planeswalkerHideBackdrop : !!(render && render.planeswalkerHideBackdrop === true);
+			window.setPlaneswalkerHideBackdrop(hideBackdrop);
+		}
+
 		// 5b. Art offset/zoom (deck default + per-card override, issue #11). Must run
 		//     AFTER frame application, not right after waitForCardReady() -- frame packs
 		//     re-run their own art auto-fit when applied, which would otherwise clobber
