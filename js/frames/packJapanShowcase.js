@@ -35,7 +35,7 @@ availableFrames = [
 	{name:'Green Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/g.png', masks:masks2, bounds:bounds},
 	{name:'Multicolored Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/m.png', masks:masks2, bounds:bounds},
 	{name:'Artifact Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/a.png', masks:masks2, bounds:bounds},
-    {name:'Artifact Power/Toughness (Alt)', src:'/img/frames/m15/japanShowcase/pt/a-alt.png', masks:masks3, bounds:bounds},
+    {name:'Artifact Power/Toughness (Alt)', src:'/img/frames/m15/japanShowcase/pt/a-alt.png', masks:masks2, bounds:bounds},
     {name:'Land Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/l.png', masks:masks2, bounds:bounds},
 	{name:'Vehicle Power/Toughness', src:'/img/frames/m15/japanShowcase/pt/v.png', masks:masks2, bounds:bounds},
 	{name:'Black Power/Toughness (Alt)', src:'/img/frames/m15/japanShowcase/pt/bAlt.png', masks:masks2, bounds:bounds},
