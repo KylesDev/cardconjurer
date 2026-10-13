@@ -47,23 +47,6 @@
         return abilities;
     }
 
-    function needsTall(abilities) {
-        if (abilities.length >= 4) return true;
-        const context = document.createElement('canvas').getContext('2d');
-        context.font = (card.height * 0.0353) + 'px mplantin';
-        const width = card.width * 0.7467;
-        const lines = abilities.reduce(function (total, ability) {
-            let used = 0, count = 1;
-            ability.text.replace(/\{[^}]*\}/g, 'M').split(/\s+/).forEach(function (word) {
-                const size = context.measureText(word + ' ').width;
-                if (used && used + size > width) { count++; used = 0; }
-                used += size;
-            });
-            return total + count;
-        }, 0);
-        return lines * 0.0353 * 1.1 > 0.2915;
-    }
-
     async function waitImages(images) {
         await Promise.all(images.filter(Boolean).map(function (image) {
             if (image.complete) return image.naturalWidth ? Promise.resolve() : Promise.reject(new Error('Immagine del frame non caricata'));
@@ -106,8 +89,8 @@
             powerOrLoyalty = imported.power && imported.toughness ? imported.power + '/' + imported.toughness : '';
         }
         const abilities = splitAbilities(oracleText);
-        if (isPW) await document.fonts.load((card.height * 0.0353) + 'px mplantin');
-        const tall = isPW && needsTall(abilities);
+        // Tall solo per quattro blocchi di abilità, incluse quelle statiche.
+        const tall = isPW && abilities.length === 4;
         const pack = isPW ? ('Planeswalker' + (tall ? 'Tall' : '') + (borderless ? 'Borderless' : tall ? '' : 'Regular'))
             : (borderless ? 'Borderless' : 'M15Regular-1');
         // Evita il click automatico non awaited di loadFramePack().

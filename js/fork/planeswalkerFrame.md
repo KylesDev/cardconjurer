@@ -1,8 +1,9 @@
 # AutoFrame Planeswalker
 
 Le opzioni `Planeswalker` e `PlaneswalkerBorderless` caricano i pack PW esistenti.
-Quattro blocchi di testo (incluse abilità statiche) richiedono Tall; per tre o meno,
-la stima delle righe con il font del pack seleziona Tall se supera lo spazio normale.
+Quattro blocchi di abilità (incluse quelle statiche) richiedono Tall; con tre o
+meno si usa Regular, indipendentemente dalla lunghezza del testo. Il testo usa
+il ridimensionamento nativo del font.
 Le altezze sono proporzionali al testo e i simboli fedeltà seguono il centro delle caselle.
 
 Per proxsmith, dopo l'import e prima degli offset arte:

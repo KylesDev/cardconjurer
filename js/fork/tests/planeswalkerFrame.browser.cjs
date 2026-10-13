@@ -59,7 +59,7 @@ test('import UI: quattro PW × due varianti, fallback e builder riutilizzabile',
                     };
                 }, { fixture, variant });
                 if (fixture.loyalty) {
-                    const tall = fixture.name.startsWith('Jace') || fixture.name.startsWith('Nicol') || fixture.name.startsWith('Karn');
+                    const tall = fixture.name.startsWith('Jace') || fixture.name.startsWith('Nicol');
                     assert.equal(state.version, 'planeswalker' + (tall ? 'Tall' : '') + (variant.endsWith('Borderless') ? 'Borderless' : tall ? '' : 'Regular'), fixture.name);
                     assert.equal(state.loyalty, fixture.loyalty);
                     const lines = fixture.oracle_text.split('\n');
@@ -107,12 +107,12 @@ test('import UI: quattro PW × due varianti, fallback e builder riutilizzabile',
             await autoFrame();
         }, cards[4]);
         assert.equal(await page.evaluate(() => card.text.pt.text), '2/2');
-        // Tre abilità lunghe e artefatto colorato: Tall + Artifact.
+        // Tre abilità, anche lunghe: Regular; artefatto colorato: Artifact.
         await page.evaluate(async () => {
             await autoPlaneswalkerFrame('Planeswalker', ['U'], '{U}', 'Legendary Artifact Planeswalker — Test', '',
                 ['+1: ' + 'Long ability text. '.repeat(30), '0: Short.', '-X: Short.'].join('\n'), '7');
         });
-        assert.equal(await page.evaluate(() => card.version), 'planeswalkerTall');
+        assert.equal(await page.evaluate(() => card.version), 'planeswalkerRegular');
         assert.ok(await page.evaluate(() => card.frames.some(frame => frame.name === 'Artifact Frame')));
         assert.equal(await page.evaluate(() => card.planeswalker.abilities[2]), '-X');
         assert.deepEqual(errors, []);
