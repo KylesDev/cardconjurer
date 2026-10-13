@@ -3,11 +3,14 @@
     // Quota minima di altezza per riga abilità, come frazione della quota uniforme total/n.
     const PW_MIN_ROW_SHARE = 0.6;
     const select = document.querySelector('#autoFrame');
-    ['Planeswalker', 'PlaneswalkerBorderless'].forEach(function (value) {
+    [
+        { value: 'Planeswalker', label: 'Planeswalker' },
+        { value: 'PlaneswalkerBorderless', label: 'Planeswalker Borderless' }
+    ].forEach(function ({ value, label }) {
         if (!select || Array.from(select.options).some(option => option.value === value)) return;
         const option = document.createElement('option');
         option.value = value;
-        option.textContent = value === 'Planeswalker' ? 'Planeswalker' : 'Planeswalker Borderless';
+        option.textContent = label;
         select.appendChild(option);
     });
     if (select && ['Planeswalker', 'PlaneswalkerBorderless'].includes(localStorage.getItem('autoFrame'))) {
