@@ -1,5 +1,7 @@
 // FORK: AutoFrame PW; chiamare e attendere autoPlaneswalkerFrame anche dal renderer.
 (function () {
+    // Quota minima di altezza per riga abilità, come frazione della quota uniforme total/n.
+    const PW_MIN_ROW_SHARE = 0.6;
     const select = document.querySelector('#autoFrame');
     ['Planeswalker', 'PlaneswalkerBorderless'].forEach(function (value) {
         if (!select || Array.from(select.options).some(option => option.value === value)) return;
@@ -124,13 +126,16 @@
             frames = [base];
             card.text.loyalty.text = String(initialLoyalty);
             const total = scaleHeight(tall ? 0.3572 : 0.2915);
+            // Ogni abilità riceve almeno PW_MIN_ROW_SHARE della quota uniforme; il resto è proporzionale al testo.
+            const minRow = total * PW_MIN_ROW_SHARE / abilities.length;
             const weights = abilities.map(ability => Math.max(1, ability.text.length));
             const sum = weights.reduce((a, b) => a + b, 0);
+            const rowHeights = weights.map(w => minRow + (total - minRow * abilities.length) * w / sum);
             for (let i = 0; i < 4; i++) {
                 const ability = abilities[i];
                 card.text['ability' + i].text = ability ? ability.text.replace(/\{\/?i\}/g, '').replace(/\(([^)]*)\)/g, '{i}($1){/i}') : '';
                 document.querySelector('#planeswalker-cost-' + i).value = ability ? ability.cost : '';
-                document.querySelector('#planeswalker-height-' + i).value = ability ? Math.round(total * weights[i] / sum) : 0;
+                document.querySelector('#planeswalker-height-' + i).value = ability ? Math.round(rowHeights[i]) : 0;
                 document.querySelector('#planeswalker-shift-' + i).value = 0;
             }
             planeswalkerEdited();
