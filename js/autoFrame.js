@@ -1756,6 +1756,9 @@ function autoFrame() {
 			loadScript('/js/frames/pack' + packFrame + '.js');
 			autoFramePack = packFrame;
 		}
+	} else if (frame == 'Planeswalker' || frame == 'PlaneswalkerBorderless') {
+		// FORK: builder PW awaited, inclusi pack/version e split abilità dopo import.
+		return window.autoPlaneswalkerFrame(frame, colors, card.text.mana.text, card.text.type.text, card.text.pt ? card.text.pt.text : '');
 	} else if (frame == 'BloomburrowBorderlessColored') {
 		// FORK: import-deck frame dispatch — autoBloomburrowFrame defined in js/fork/deckImport.js
 		if (window.autoBloomburrowFrame) {
