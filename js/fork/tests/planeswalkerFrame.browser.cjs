@@ -34,7 +34,8 @@ test('import UI: quattro PW × due varianti, fallback e builder riutilizzabile',
         assert.deepEqual(await page.locator('#autoFrame option').evaluateAll(options => options.filter(o => o.value.startsWith('Planeswalker')).map(o => o.textContent)),
             ['Planeswalker', 'Planeswalker Borderless']);
         for (const variant of ['Planeswalker', 'PlaneswalkerBorderless']) {
-            for (const fixture of cards) {
+            const legendaryFallback = { ...cards[4], name: 'Legendary Bears', type_line: 'Legendary Creature — Bear' };
+            for (const fixture of [...cards, legendaryFallback]) {
                 const state = await page.evaluate(async ({ fixture, variant }) => {
                     document.querySelector('#autoFrame').value = 'false';
                     // Riproduce l'import su layout non PW, poi il cambio AutoFrame.
@@ -72,11 +73,12 @@ test('import UI: quattro PW × due varianti, fallback e builder riutilizzabile',
                     });
                     const color = fixture.colors.length > 1 ? 'Multicolored' : fixture.colors.length === 0 ? 'Artifact' : { U: 'Blue', B: 'Black' }[fixture.colors[0]];
                     assert.ok(state.frames.some(frame => frame.name === color + ' Frame'));
-                    assert.ok(state.frames.some(frame => /Crown/.test(frame.name)));
+                    assert.ok(!state.frames.some(frame => /Crown/.test(frame.name)), fixture.name + ': nessuna corona PW');
                 } else {
                     assert.equal(state.version, variant.endsWith('Borderless') ? 'borderless' : 'm15Regular');
                     assert.equal(state.rules, fixture.oracle_text);
                     assert.equal(state.pt, '2/2');
+                    assert.equal(state.frames.some(frame => /Crown/.test(frame.name)), /legendary/i.test(fixture.type_line), fixture.name + ': corona solo nel fallback leggendario');
                 }
                 assert.ok(state.frames.every(frame => frame.loaded));
                 console.log(fixture.name, variant, state.version, state.costs, state.loyalty);

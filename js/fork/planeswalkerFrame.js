@@ -120,10 +120,8 @@
             const names = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green', M: 'Multicolored', A: 'Artifact' };
             const base = JSON.parse(JSON.stringify(availableFrames.find(frame => frame.name === names[letter] + ' Frame')));
             base.masks = [];
-            // Riutilizziamo corona/copertura native, con la stessa geometria del titolo.
-            frames = /legendary/i.test(type) ? buildAutoFrames(borderless ? 'Borderless' : 'M15Regular-1', colors, mana, type, '')
-                .filter(frame => /Crown/.test(frame.name)) : [];
-            frames.push(base);
+            // I planeswalker non usano corone, anche quando sono leggendari.
+            frames = [base];
             card.text.loyalty.text = String(initialLoyalty);
             const total = scaleHeight(tall ? 0.3572 : 0.2915);
             const weights = abilities.map(ability => Math.max(1, ability.text.length));
