@@ -39,3 +39,18 @@ verifica frame caricati, versione, colore, costi, testi, altezze e fedeltà;
 verifica l'assenza di corone sui PW e la corona solo nel fallback leggendario.
 Ritarda la versione PW per riprodurre la
 race. Arte e simbolo espansione non vengono scaricati.
+
+Il renderer `js/fork/renderApi.js` chiama direttamente e attende il builder PW,
+passando testo Oracle e fedeltà dall'import Scryfall corrente. Il frame e lo
+split abilità terminano prima degli offset arte. Con un frame esplicito,
+AutoFrame viene disabilitato durante l’import per evitare builder della carta
+precedente ancora in corso. I manifest proxsmith contengono
+già il frame risolto per ogni carta (default del mazzo oppure override).
+Le opzioni sono dichiarate come `{ value, label }`, lette anche dal catalogo
+proxsmith senza eseguire JavaScript.
+
+Regressione del renderer, con risposte Scryfall locali:
+
+```sh
+node --test js/fork/tests/renderApiPlaneswalker.browser.cjs
+```

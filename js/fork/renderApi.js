@@ -427,6 +427,13 @@
 
 		// 1. Import from Scryfall (exact name). Fetches mana/type/P/T text and applies
 		//    Card Conjurer's own default Scryfall art.
+		// Un frame esplicito viene applicato e atteso al passo 5. Evita che
+		// changeCardIndex rilanci il frame della carta precedente durante l'import
+		// (un builder PW in volo può altrimenti sovrascrivere un override non PW).
+		if (spec.frame) {
+			var importAutoFrameEl = document.querySelector('#autoFrame');
+			if (importAutoFrameEl) { importAutoFrameEl.value = 'false'; }
+		}
 		await importCardForDeck(spec.name);
 
 		// 1b. Set-symbol tri-state (off/auto/code) + collector info (issue #11).
@@ -503,7 +510,30 @@
 		if (spec.frame) {
 			await ensureFramePackLoaded(spec.frame);
 			var frameConfig = window.IMPORT_FRAME_CONFIG && window.IMPORT_FRAME_CONFIG[spec.frame];
-			if (frameConfig && typeof window.autoElementFrame === 'function') {
+			if (spec.frame === 'Planeswalker' || spec.frame === 'PlaneswalkerBorderless') {
+				// Import precede il layout PW: il builder applica il frame, divide le
+				// abilità e attende immagini/versione prima degli offset arte (5b).
+				if (typeof window.autoPlaneswalkerFrame !== 'function') {
+					throw new Error('Planeswalker frame builder is unavailable');
+				}
+				var pwFrameEl = document.querySelector('#autoFrame');
+				if (pwFrameEl) { pwFrameEl.value = spec.frame; }
+				var importedIndex = document.querySelector('#import-index');
+				var importedPW = typeof scryfallCard !== 'undefined' && importedIndex
+					? scryfallCard[importedIndex.value] : null;
+				var pwColors = typeof window.detectAutoFrameColors === 'function'
+					? window.detectAutoFrameColors(card) : [];
+				// Il builder cambia pack/layout fuori dal preloader: un override
+				// nativo successivo deve riapplicare il proprio pack, anche se già visto.
+				loadedFramePacks.clear();
+				await window.autoPlaneswalkerFrame(
+					spec.frame, pwColors, card.text.mana.text, card.text.type.text,
+					importedPW && importedPW.power && importedPW.toughness
+						? importedPW.power + '/' + importedPW.toughness : '',
+					importedPW ? importedPW.oracle_text : undefined,
+					importedPW ? (importedPW.loyalty || '') : undefined
+				);
+			} else if (frameConfig && typeof window.autoElementFrame === 'function') {
 				var frameColors = typeof window.detectAutoFrameColors === 'function'
 					? window.detectAutoFrameColors(card)
 					: [];
